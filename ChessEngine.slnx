@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="ChessEngine.vcxproj" />
+  <Project Path="ChessEngine.vcxproj" Id="c02b1e2f-8130-455f-bb32-0c7ecb07456a" />
 </Solution>
