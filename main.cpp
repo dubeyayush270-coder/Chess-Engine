@@ -1,4 +1,5 @@
 #include <SDL.h>
+#include <SDL_image.h>
 #include <iostream>
 
 int main(int argc, char* argv[])
@@ -80,16 +81,34 @@ int main(int argc, char* argv[])
 				}
 				else 
 				{
-					SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+					SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
 				}
 				SDL_RenderFillRect(renderer, &square);
 			}
 
 		}
 
+		// For creating texture
+		SDL_Surface* surface = IMG_Load("assets/images/white_pawn.png");
+
+		SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+		SDL_FreeSurface(surface);
+		surface = nullptr;
+
+		SDL_Rect destination;
+
+		destination.x = 0;
+		destination.y = 600;
+		destination.w = 100;
+		destination.h = 100;
+
+		SDL_RenderCopy(renderer, texture, nullptr, &destination);
+
 		// Display Everything
 		SDL_RenderPresent(renderer);
 	}
+
 
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
