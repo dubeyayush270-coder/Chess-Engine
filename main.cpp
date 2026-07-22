@@ -2,6 +2,52 @@
 #include <SDL_image.h>
 #include <iostream>
 
+const int EMPTY = 0;
+
+const int WHITE_PAWN       = 1;
+const int WHITE_ROOK       = 2;
+const int WHITE_KNIGHT     = 3;
+const int WHITE_BISHOP     = 4;
+const int WHITE_QUEEN      = 5;
+const int WHITE_KING       = 6;
+
+const int BLACK_PAWN       = 7;
+const int BLACK_ROOK       = 8;
+const int BLACK_KNIGHT     = 9;
+const int BLACK_BISHOP     = 10;
+const int BLACK_QUEEN      = 11;
+const int BLACK_KING       = 12;
+
+int board[8][8] = {
+	{BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK},
+	{BLACK_PAWN, BLACK_PAWN,   BLACK_PAWN,   BLACK_PAWN,  BLACK_PAWN, BLACK_PAWN,   BLACK_PAWN,   BLACK_PAWN},
+	{EMPTY,      EMPTY,        EMPTY,        EMPTY,       EMPTY,      EMPTY,        EMPTY,        EMPTY},
+	{EMPTY,      EMPTY,        EMPTY,        EMPTY,       EMPTY,      EMPTY,        EMPTY,        EMPTY},
+	{EMPTY,      EMPTY,        EMPTY,        EMPTY,       EMPTY,      EMPTY,        EMPTY,        EMPTY},
+	{EMPTY,      EMPTY,        EMPTY,        EMPTY,       EMPTY,      EMPTY,        EMPTY,        EMPTY},
+	{WHITE_PAWN, WHITE_PAWN,   WHITE_PAWN,   WHITE_PAWN,  WHITE_PAWN, WHITE_PAWN,   WHITE_PAWN,   WHITE_PAWN},
+	{WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK}
+};
+
+SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
+
+	SDL_Surface* surface = IMG_Load(filename);
+	if (surface == nullptr) {
+		std::cout << "failed to load image :" << filename << std::endl;
+		return nullptr;
+	}
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+	
+	if (texture == nullptr)
+	{
+		std::cout << "Failed to create texture: " << SDL_GetError() << std::endl;
+	}
+	
+	SDL_FreeSurface(surface);
+
+	return texture;
+}
+
 int main(int argc, char* argv[])
 {
 	// This will initialize SDL
@@ -46,10 +92,32 @@ int main(int argc, char* argv[])
 
 	// Code For Square
 
+	// Creating texture Array
+
+	SDL_Texture* pieceTextures[13];
+	for (int i = 0; i < 13; i++) {
+		pieceTextures[i] = nullptr;
+	}
+
+	pieceTextures[WHITE_PAWN]   = LoadTexture(renderer, "assets/images/white_pawn.png");
+	pieceTextures[WHITE_ROOK]   = LoadTexture(renderer, "assets/images/white_rook.png");
+	pieceTextures[WHITE_KNIGHT] = LoadTexture(renderer, "assets/images/white_knight.png");
+	pieceTextures[WHITE_BISHOP] = LoadTexture(renderer, "assets/images/white_bishop.png");
+	pieceTextures[WHITE_QUEEN]  = LoadTexture(renderer, "assets/images/white_queen.png");
+	pieceTextures[WHITE_KING]   = LoadTexture(renderer, "assets/images/white_king.png");
+	pieceTextures[BLACK_PAWN]   = LoadTexture(renderer, "assets/images/black_pawn.png");
+	pieceTextures[BLACK_ROOK]   = LoadTexture(renderer, "assets/images/black_rook.png");
+	pieceTextures[BLACK_KNIGHT] = LoadTexture(renderer, "assets/images/black_knight.png");
+	pieceTextures[BLACK_BISHOP] = LoadTexture(renderer, "assets/images/black_bishop.png");
+	pieceTextures[BLACK_QUEEN]  = LoadTexture(renderer, "assets/images/black_queen.png");
+	pieceTextures[BLACK_KING]   = LoadTexture(renderer, "assets/images/black_king.png");
+
+	// Creating texture Array
+	
+
+
 	bool running = true;
 	SDL_Event event;
-
-
 	while (running)
 	{
 		while (SDL_PollEvent(&event))
@@ -88,28 +156,36 @@ int main(int argc, char* argv[])
 
 		}
 
-		// For creating texture
-		SDL_Surface* surface = IMG_Load("assets/images/white_pawn.png");
+		
+		
+		// For creating pieces
+		
+		for (int row = 0; row < 8; row++) {
+			for (int column = 0; column < 8; column++) {
+				int pieceID = board[row][column];
+				if (pieceID == EMPTY) {
+					continue;
+				}
+				SDL_Rect destination{};
 
-		SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+				destination.x = column * 100;
+				destination.y = row * 100;
+				destination.w = 100;
+				destination.h = 100;
+				SDL_RenderCopy(renderer, pieceTextures[pieceID], nullptr, &destination);
+			}
+		}
 
-		SDL_FreeSurface(surface);
-		surface = nullptr;
-
-		SDL_Rect destination;
-
-		destination.x = 0;
-		destination.y = 600;
-		destination.w = 100;
-		destination.h = 100;
-
-		SDL_RenderCopy(renderer, texture, nullptr, &destination);
+		// For creating pieces
 
 		// Display Everything
 		SDL_RenderPresent(renderer);
+		// Display Everything
 	}
 
-
+	for (int i = 1; i < 13; i++) {
+		SDL_DestroyTexture(pieceTextures[i]);
+	}
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
