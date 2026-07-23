@@ -114,7 +114,13 @@ int main(int argc, char* argv[])
 
 	// Creating texture Array
 	
+	// variables for selected pieces
 
+	bool pieceSelected = false;
+	int selectedRow = -1;
+	int selectedColumn = -1;
+
+	// variables for selected pieces
 
 	bool running = true;
 	SDL_Event event;
@@ -125,6 +131,43 @@ int main(int argc, char* argv[])
 			if (event.type == SDL_QUIT)
 			{
 				running = false;
+			}
+
+			if (event.type == SDL_MOUSEBUTTONDOWN) {
+				std::cout << "X = " << event.button.x <<std::endl;
+				std::cout << "Y = " << event.button.y << std::endl;
+
+				int column = event.button.x / 100;
+				int row = event.button.y / 100;
+				std::cout << "Row = " << row << std::endl;
+				std::cout << "Column = " << column << std::endl;
+
+				int piece = board[row][column];
+				if (piece == EMPTY) {
+					std::cout << "Empty square selected" << std::endl;
+				}
+				else {
+					if (!pieceSelected) {
+						pieceSelected = true;
+						selectedRow = row;
+						selectedColumn = column;
+					}
+					switch (piece) {
+						case WHITE_PAWN :   std::cout << "White Pawn selected\n";break;
+						case WHITE_ROOK :   std::cout << "White Rook selected\n";break;
+						case WHITE_KNIGHT : std::cout << "White Knight selected\n";break;
+						case WHITE_BISHOP : std::cout << "White Bishop selected\n";break;
+						case WHITE_QUEEN :  std::cout << "White Queen selected\n";break;
+						case WHITE_KING :   std::cout << "White King selected\n";break;
+						case BLACK_PAWN :   std::cout << "Black Pawn selected\n";break;
+						case BLACK_ROOK :   std::cout << "Black Rook selected\n";break;
+						case BLACK_KNIGHT : std::cout << "Black Knight selected\n";break;
+						case BLACK_BISHOP : std::cout << "Black Bishop selected\n";break;
+						case BLACK_QUEEN :  std::cout << "Black Queen selected\n";break;
+						case BLACK_KING :   std::cout << "Black King selected\n";break;
+						default :           std::cout << "Invalid Piece ID\n";
+					}
+				}
 			}
 		}
 
