@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <iostream>
+#include <cmath>
 
 const int EMPTY = 0;
 
@@ -46,6 +47,50 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 	SDL_FreeSurface(surface);
 
 	return texture;
+}
+bool isEnemyPiece(int movingPiece, int targetPiece) {
+	if (movingPiece <= WHITE_KING && movingPiece > EMPTY) {
+		if (targetPiece > WHITE_KING) {
+			return true;
+		}
+	}
+	else {
+		if (targetPiece < BLACK_PAWN && targetPiece > EMPTY) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool IsValidPawnMove(int selectedRow, int selectedColumn, int destinationRow, int destinationColumn, int pieceID, int board[8][8]) 
+{
+	int direction;
+	int startingRow;
+
+	// check the pawn color
+	if (pieceID == WHITE_PAWN) {
+		direction = -1;
+		startingRow = 6;
+	}
+	else {
+		direction = 1;
+		startingRow = 1;
+	}
+	// For single square
+	if ((destinationRow - selectedRow) == direction && destinationColumn == selectedColumn && board[destinationRow][destinationColumn] == EMPTY) {
+		return true;
+	}
+
+	// For double squares
+	if (selectedRow == startingRow && (destinationRow - selectedRow) == 2*direction && destinationColumn == selectedColumn && board[selectedRow + direction][selectedColumn] == EMPTY && board[destinationRow][destinationColumn] == EMPTY) {
+		return true;
+	}
+
+	// For diagonal capture
+	if ((destinationRow - selectedRow) == direction && std::abs(destinationColumn - selectedColumn) == 1 && isEnemyPiece(pieceID, board[destinationRow][destinationColumn])) {
+		return true;
+	}
+	return false;
 }
 
 int main(int argc, char* argv[])
@@ -156,9 +201,17 @@ int main(int argc, char* argv[])
 				}
 				else {
 					if (selectedRow != row || selectedColumn != column) {
-						board[row][column] = board[selectedRow][selectedColumn];
-						board[selectedRow][selectedColumn] = EMPTY;
-						pieceSelected = false;
+						int pieceID = board[selectedRow][selectedColumn];
+						if (IsValidPawnMove(selectedRow, selectedColumn, row, column, pieceID, board)) 
+						{
+							board[row][column] = board[selectedRow][selectedColumn];
+							board[selectedRow][selectedColumn] = EMPTY;
+							pieceSelected = false;
+						}
+						else
+						{
+							std::cout << "Illegal pawn move\n";
+						}
 					}
 					else {
 						pieceSelected = false;
