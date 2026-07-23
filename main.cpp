@@ -143,29 +143,25 @@ int main(int argc, char* argv[])
 				std::cout << "Column = " << column << std::endl;
 
 				int piece = board[row][column];
-				if (piece == EMPTY) {
-					std::cout << "Empty square selected" << std::endl;
-				}
-				else {
-					if (!pieceSelected) {
+
+				if (!pieceSelected) {
+					if (piece == EMPTY) {
+						std::cout << "Empty square selected" << std::endl;
+					}
+					else {
 						pieceSelected = true;
 						selectedRow = row;
 						selectedColumn = column;
 					}
-					switch (piece) {
-						case WHITE_PAWN :   std::cout << "White Pawn selected\n";break;
-						case WHITE_ROOK :   std::cout << "White Rook selected\n";break;
-						case WHITE_KNIGHT : std::cout << "White Knight selected\n";break;
-						case WHITE_BISHOP : std::cout << "White Bishop selected\n";break;
-						case WHITE_QUEEN :  std::cout << "White Queen selected\n";break;
-						case WHITE_KING :   std::cout << "White King selected\n";break;
-						case BLACK_PAWN :   std::cout << "Black Pawn selected\n";break;
-						case BLACK_ROOK :   std::cout << "Black Rook selected\n";break;
-						case BLACK_KNIGHT : std::cout << "Black Knight selected\n";break;
-						case BLACK_BISHOP : std::cout << "Black Bishop selected\n";break;
-						case BLACK_QUEEN :  std::cout << "Black Queen selected\n";break;
-						case BLACK_KING :   std::cout << "Black King selected\n";break;
-						default :           std::cout << "Invalid Piece ID\n";
+				}
+				else {
+					if (selectedRow != row || selectedColumn != column) {
+						board[row][column] = board[selectedRow][selectedColumn];
+						board[selectedRow][selectedColumn] = EMPTY;
+						pieceSelected = false;
+					}
+					else {
+						pieceSelected = false;
 					}
 				}
 			}
@@ -199,6 +195,7 @@ int main(int argc, char* argv[])
 
 		}
 
+		//Draw the chess Board
 		
 		
 		// For creating pieces
@@ -218,7 +215,7 @@ int main(int argc, char* argv[])
 				SDL_RenderCopy(renderer, pieceTextures[pieceID], nullptr, &destination);
 			}
 		}
-
+		
 		// For creating pieces
 
 		// Display Everything
