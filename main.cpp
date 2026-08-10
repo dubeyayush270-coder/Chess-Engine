@@ -49,16 +49,40 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 	return texture;
 }
 bool isEnemyPiece(int movingPiece, int targetPiece) {
-	if (movingPiece <= WHITE_KING && movingPiece > EMPTY) {
-		if (targetPiece > WHITE_KING) {
+	if (movingPiece <= WHITE_KING && movingPiece > EMPTY) 
+	{
+		if (targetPiece > WHITE_KING) 
+		{
 			return true;
 		}
 	}
-	else {
-		if (targetPiece < BLACK_PAWN && targetPiece > EMPTY) {
+	else 
+	{
+		if (targetPiece < BLACK_PAWN && targetPiece > EMPTY) 
+		{
 			return true;
 		}
 	}
+	return false;
+}
+
+bool isFriendlyPiece(int movingPiece, int targetPiece) 
+{
+	if (movingPiece <= WHITE_KING && movingPiece > EMPTY) 
+	{
+		if (targetPiece <= WHITE_KING && targetPiece > EMPTY) 
+		{
+			return true;
+		}
+	}
+	else
+	{
+		if (targetPiece > WHITE_KING) 
+		{
+			return true;
+		}
+	}
+
 	return false;
 }
 
@@ -90,6 +114,70 @@ bool IsValidPawnMove(int selectedRow, int selectedColumn, int destinationRow, in
 	if ((destinationRow - selectedRow) == direction && std::abs(destinationColumn - selectedColumn) == 1 && isEnemyPiece(pieceID, board[destinationRow][destinationColumn])) {
 		return true;
 	}
+	return false;
+}
+
+bool IsValidRookMove(int selectedRow, int selectedColumn, int destinationRow, int destinationColumn, int pieceID, int board[8][8])
+{
+	if (selectedColumn == destinationColumn && selectedRow == destinationRow) {
+		return false;
+	}
+	if (selectedColumn == destinationColumn) {
+		int step = (destinationRow > selectedRow) ? 1 : -1;
+		for (int row = selectedRow + step; row != destinationRow; row += step) {
+			if (board[row][destinationColumn] != EMPTY) {
+				return false;
+			}
+		}
+	}
+	else if (selectedRow == destinationRow) {
+		int step = (destinationColumn > selectedColumn) ? 1 : -1;
+		for (int column = selectedColumn + step; column != destinationColumn; column += step) {
+			if (board[destinationRow][column] != EMPTY) {
+				return false;
+			}
+		}
+	}
+	else 
+	{
+		return false;
+	}
+
+	int targetPiece = board[destinationRow][destinationColumn];
+
+	if (targetPiece == EMPTY) {
+		return true;
+	}
+
+	if (isEnemyPiece(pieceID, targetPiece)) {
+		return true;
+	}
+
+	return false;
+}
+
+bool IsValidMove(int selectedRow, int selectedColumn, int destinationRow, int destinationColumn, int pieceID, int board[8][8]) 
+{
+
+	if (selectedRow < 0 || selectedRow >= 8 ||
+		selectedColumn < 0 || selectedColumn >= 8 ||
+		destinationRow < 0 || destinationRow >= 8 ||
+		destinationColumn < 0 || destinationColumn >= 8)
+	{
+		return false;
+	}
+
+
+	switch (pieceID)
+	{
+	case WHITE_PAWN:
+	case BLACK_PAWN:
+		return IsValidPawnMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
+	case WHITE_ROOK:
+	case BLACK_ROOK:
+		return IsValidRookMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
+	}
+
 	return false;
 }
 
@@ -200,22 +288,39 @@ int main(int argc, char* argv[])
 					}
 				}
 				else {
-					if (selectedRow != row || selectedColumn != column) {
-						int pieceID = board[selectedRow][selectedColumn];
-						if (IsValidPawnMove(selectedRow, selectedColumn, row, column, pieceID, board)) 
-						{
-							board[row][column] = board[selectedRow][selectedColumn];
-							board[selectedRow][selectedColumn] = EMPTY;
-							pieceSelected = false;
-						}
-						else
-						{
-							std::cout << "Illegal pawn move\n";
-						}
-					}
-					else {
+					int pieceID = board[selectedRow][selectedColumn];
+					if (selectedRow == row && selectedColumn == column) 
+					{
+						std::cout << "Deselecting piece\n";
+
 						pieceSelected = false;
+						selectedRow = -1;
+						selectedColumn = -1;
+						
 					}
+					
+					else if (isFriendlyPiece(pieceID, piece))
+					{
+						selectedRow = row;
+						selectedColumn = column;
+						pieceSelected = true;
+						
+					}
+
+					else if (IsValidMove(selectedRow, selectedColumn, row, column, pieceID, board))
+					{
+						board[row][column] = board[selectedRow][selectedColumn];							
+						board[selectedRow][selectedColumn] = EMPTY;
+
+						pieceSelected = false;
+						selectedColumn = -1;
+						selectedRow = -1;
+					}
+					else 
+					{
+						std::cout << "ILLEGAL MOVE\n";
+					}
+					
 				}
 			}
 		}
