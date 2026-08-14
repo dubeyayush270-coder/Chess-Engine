@@ -234,7 +234,6 @@ bool IsValidKnightMove(int selectedRow, int selectedColumn, int destinationRow, 
 
 bool IsValidQueenMove(int selectedRow, int selectedColumn, int destinationRow, int destinationColumn, int pieceID, int board[8][8])
 {
-	std::cout << "Queen move checking\n";
 	if (IsValidRookMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board))
 	{
 		return true;
@@ -242,7 +241,6 @@ bool IsValidQueenMove(int selectedRow, int selectedColumn, int destinationRow, i
 
 	if (IsValidBishopMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board))
 	{
-		std::cout << "Bishop accepted queen diagonal\n";
 		return true;
 	}
 
@@ -311,6 +309,162 @@ bool IsValidMove(int selectedRow, int selectedColumn, int destinationRow, int de
 	case WHITE_KING:
 	case BLACK_KING:
 		return IsValidKingMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
+	}
+
+	return false;
+}
+
+bool findKing(int board[8][8], int kingPiece, int& kingRow, int& kingColumn)
+{
+	for (int row = 0; row < 8; row++) 
+	{
+		for (int column = 0; column < 8; column++) 
+		{
+			if (board[row][column] == kingPiece)
+			{
+				kingRow = row;
+				kingColumn = column;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+const int knightMoves[8][2] = { {-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{ 1,2 },{ 2,-1 },{ 2,1 } };
+
+const int kingMoves[8][2] = { {-1, -1},{-1,  0},{-1,  1},{ 0, -1},{ 0,  1},{ 1, -1},{ 1,  0},{ 1,  1} };
+
+bool IsKingInCheck(int board[8][8], int kingPiece)
+{
+	int kingRow;
+	int kingColumn;
+
+	if (!findKing(board, kingPiece, kingRow, kingColumn)) 
+	{
+		return false;
+	}
+
+	if (kingPiece == WHITE_KING)
+	{
+		if (kingRow > 0)
+		{
+			if (kingColumn > 0) 
+			{
+				if (board[kingRow - 1][kingColumn - 1] == BLACK_PAWN)
+				{
+					return true;
+				}
+			}
+			if (kingColumn < 7)
+			{
+				if (board[kingRow - 1][kingColumn + 1] == BLACK_PAWN)
+				{
+					return true;
+				}
+			}
+		}
+	}
+	else 
+	{
+		if (kingRow < 7)
+		{
+			if (kingColumn > 0)
+			{
+				if (board[kingRow + 1][kingColumn - 1] == WHITE_PAWN)
+				{
+					return true;
+				}
+			}
+			if (kingColumn < 7)
+			{
+				if (board[kingRow + 1][kingColumn + 1] == WHITE_PAWN)
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	int enemyKnight = (kingPiece == WHITE_KING) ? BLACK_KNIGHT : WHITE_KNIGHT;
+
+	for (int i = 0; i < 8; i++)
+	{
+		int row = kingRow + knightMoves[i][0];
+		int column = kingColumn + knightMoves[i][1];
+
+		if (row >= 0 && row < 8 &&
+			column >= 0 && column < 8)
+		{
+			if (board[row][column] == enemyKnight)
+			{
+				return true;
+			}
+		}
+	}
+
+	int enemyRook = (kingPiece == WHITE_KING) ? BLACK_ROOK : WHITE_ROOK;
+
+	for (int row = 0; row < 8; row++) 
+	{
+		for (int column = 0; column < 8; column++)
+		{
+			if (board[row][column] == enemyRook)
+			{
+				if (IsValidRookMove(row, column, kingRow, kingColumn, enemyRook, board))
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	int enemyBishop = (kingPiece == WHITE_KING) ? BLACK_BISHOP : WHITE_BISHOP;
+	
+	for (int row = 0; row < 8; row++)
+	{
+		for (int column = 0; column < 8; column++)
+		{
+			if (board[row][column] == enemyBishop)
+			{
+				if (IsValidBishopMove(row, column, kingRow, kingColumn, enemyBishop, board))
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	int enemyQueen = (kingPiece == WHITE_KING) ? BLACK_QUEEN : WHITE_QUEEN;
+
+	for (int row = 0; row < 8; row++)
+	{
+		for (int column = 0; column < 8; column++)
+		{
+			if (board[row][column] == enemyQueen)
+			{
+				if (IsValidQueenMove(row, column, kingRow, kingColumn, enemyQueen, board))
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	int enemyKing = (kingPiece == WHITE_KING) ? BLACK_KING : WHITE_KING;
+
+	for (int i = 0; i < 8; i++)
+	{
+		int row = kingRow + kingMoves[i][0];
+		int column = kingColumn + kingMoves[i][1];
+
+		if (row >= 0 && row < 8 &&
+			column >= 0 && column < 8)
+		{
+			if (board[row][column] == enemyKing)
+			{
+				return true;
+			}
+		}
 	}
 
 	return false;
