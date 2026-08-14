@@ -156,6 +156,129 @@ bool IsValidRookMove(int selectedRow, int selectedColumn, int destinationRow, in
 	return false;
 }
 
+bool IsValidBishopMove(int selectedRow, int selectedColumn, int destinationRow, int destinationColumn, int pieceID, int board[8][8])
+{
+	if (selectedColumn < 0 || selectedRow < 0 || destinationColumn < 0 || destinationRow < 0 ||
+		selectedColumn >= 8 || selectedRow >= 8 || destinationColumn >= 8 || destinationRow >= 8)
+	{
+		return false;
+	}
+
+	if (selectedRow == destinationRow &&
+		selectedColumn == destinationColumn)
+	{
+		return false;
+	}
+
+	if (std::abs(selectedColumn - destinationColumn) != std::abs(selectedRow - destinationRow))
+	{
+		return false;
+	}
+
+	int rowStep = (destinationRow > selectedRow) ? 1 : -1;
+	int columnStep = (destinationColumn > selectedColumn) ? 1 : -1;
+
+	int row = selectedRow + rowStep;
+	int column = selectedColumn + columnStep;
+
+	while (row != destinationRow && column != destinationColumn)
+	{
+		if (board[row][column] != EMPTY)
+		{
+			return false;
+		}
+		row += rowStep;
+		column += columnStep;
+	}
+
+	int targetPiece = board[destinationRow][destinationColumn];
+
+	if (targetPiece == EMPTY) 
+	{
+		return true;
+	}
+
+	if (isEnemyPiece(pieceID, targetPiece))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool IsValidKnightMove(int selectedRow, int selectedColumn, int destinationRow, int destinationColumn, int pieceID, int board[8][8])
+{
+	int rowDifference = std::abs(destinationRow - selectedRow);
+	int columnDifference = std::abs(destinationColumn - selectedColumn);
+
+	if (!((rowDifference == 1 && columnDifference == 2) || (rowDifference == 2 && columnDifference == 1)))
+	{
+		return false;
+	}
+
+	int targetPiece = board[destinationRow][destinationColumn];
+
+	if (targetPiece == EMPTY)
+	{
+		return true;
+	}
+
+	if (isEnemyPiece(pieceID, targetPiece))
+	{
+		return true;
+	}
+
+	return false;
+
+}
+
+bool IsValidQueenMove(int selectedRow, int selectedColumn, int destinationRow, int destinationColumn, int pieceID, int board[8][8])
+{
+	std::cout << "Queen move checking\n";
+	if (IsValidRookMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board))
+	{
+		return true;
+	}
+
+	if (IsValidBishopMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board))
+	{
+		std::cout << "Bishop accepted queen diagonal\n";
+		return true;
+	}
+
+	return false;
+}
+
+bool IsValidKingMove(int selectedRow, int selectedColumn, int destinationRow, int destinationColumn, int pieceID, int board[8][8])
+{
+	int rowDifference = std::abs(destinationRow - selectedRow);
+	int columnDifference = std::abs(destinationColumn - selectedColumn);
+
+	if (rowDifference > 1 || columnDifference > 1)
+	{
+		return false;
+	}
+
+	if (rowDifference == 0 && columnDifference == 0)
+	{
+		return false;
+	}
+
+	int targetPiece = board[destinationRow][destinationColumn];
+
+	if (targetPiece == EMPTY)
+	{
+		return true;
+	}
+
+	if (isEnemyPiece(pieceID, targetPiece))
+	{
+		return true;
+	}
+
+	return false;
+}
+
 bool IsValidMove(int selectedRow, int selectedColumn, int destinationRow, int destinationColumn, int pieceID, int board[8][8]) 
 {
 
@@ -176,6 +299,18 @@ bool IsValidMove(int selectedRow, int selectedColumn, int destinationRow, int de
 	case WHITE_ROOK:
 	case BLACK_ROOK:
 		return IsValidRookMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
+	case WHITE_BISHOP:
+	case BLACK_BISHOP:
+		return IsValidBishopMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
+	case WHITE_KNIGHT:
+	case BLACK_KNIGHT:
+		return IsValidKnightMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
+	case WHITE_QUEEN:
+	case BLACK_QUEEN:
+		return IsValidQueenMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
+	case WHITE_KING:
+	case BLACK_KING:
+		return IsValidKingMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
 	}
 
 	return false;
