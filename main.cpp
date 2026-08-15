@@ -470,6 +470,112 @@ bool IsKingInCheck(int board[8][8], int kingPiece)
 	return false;
 }
 
+bool IsLegalMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8][8])
+{
+	if (fromRow < 0 || fromRow >= 8 ||
+		fromColumn < 0 || fromColumn >= 8 ||
+		toRow < 0 || toRow >= 8 ||
+		toColumn < 0 || toColumn >= 8)
+	{
+		return false;
+	}
+
+	int movingPiece = board[fromRow][fromColumn];
+
+	if (movingPiece == EMPTY)
+	{
+		return false;
+	}
+	int capturedPiece = board[toRow][toColumn];
+
+	if (!IsValidMove(fromRow, fromColumn, toRow, toColumn, movingPiece, board))
+	{
+		return false;
+	}
+
+	board[toRow][toColumn] = movingPiece;
+	board[fromRow][fromColumn] = EMPTY;
+	
+	int kingPiece = (movingPiece > EMPTY && movingPiece < BLACK_PAWN) ? WHITE_KING : BLACK_KING;
+
+	bool kingInCheck = IsKingInCheck(board, kingPiece);
+
+	board[fromRow][fromColumn] = movingPiece;
+	board[toRow][toColumn] = capturedPiece;
+
+	return !kingInCheck;
+}
+
+//bool IsValidMove (int fromRow,int fromColumn,int toRow,int toColumn,int board[8][8])
+//{
+//	int piece = board[fromRow][fromColumn];
+//
+//	if (piece == EMPTY)
+//	{
+//		return false;
+//	}
+//	else if (piece == WHITE_PAWN || piece == BLACK_PAWN)
+//	{
+//		if (!IsValidPawnMove(fromRow, fromColumn, toRow, toColumn, piece, board))
+//		{
+//			return false;
+//		}
+//	}
+//	else if (piece == WHITE_KNIGHT || piece == BLACK_KNIGHT)
+//	{
+//		if (!IsValidKnightMove(fromRow, fromColumn, toRow, toColumn, piece, board))
+//		{
+//			return false;
+//		}
+//	}
+//	else if (piece == WHITE_BISHOP || piece == BLACK_BISHOP)
+//	{
+//		if (!IsValidBishopMove(fromRow, fromColumn, toRow, toColumn, piece, board))
+//		{
+//			return false;
+//		}
+//	}
+//	else if (piece == WHITE_ROOK || piece == BLACK_ROOK)
+//	{
+//		if (!IsValidRookMove(fromRow, fromColumn, toRow, toColumn, piece, board))
+//		{
+//			return false;
+//		}
+//	}
+//	else if (piece == WHITE_QUEEN || piece == BLACK_QUEEN)
+//	{
+//		if (!IsValidQueenMove(fromRow, fromColumn, toRow, toColumn, piece, board))
+//		{
+//			return false;
+//		}
+//	}
+//	else if (piece == WHITE_KING || piece == BLACK_KING)
+//	{
+//		if (!IsValidKingMove(fromRow, fromColumn, toRow, toColumn, piece, board))
+//		{
+//			return false;
+//		}
+//	}
+//
+//	return true;
+//}
+
+void MakeMove(int fromRow,int fromColumn,int toRow,int toColumn,int board[8][8])
+{
+	board[toRow][toColumn] = board[fromRow][fromColumn];
+	board[fromRow][fromColumn] = EMPTY;
+}
+
+bool IsWhitePiece(int piece)
+{
+	return piece >= WHITE_PAWN && piece <= WHITE_KING;
+}
+
+bool IsBlackPiece(int piece)
+{
+	return piece >= BLACK_PAWN && piece <= BLACK_KING;
+}
+
 int main(int argc, char* argv[])
 {
 	// This will initialize SDL
@@ -537,6 +643,7 @@ int main(int argc, char* argv[])
 	// Creating texture Array
 	
 	// variables for selected pieces
+	bool whiteTurn = true;
 
 	bool pieceSelected = false;
 	int selectedRow = -1;
@@ -570,10 +677,15 @@ int main(int argc, char* argv[])
 					if (piece == EMPTY) {
 						std::cout << "Empty square selected" << std::endl;
 					}
-					else {
+					else if (whiteTurn && IsWhitePiece(piece) || !whiteTurn && IsBlackPiece(piece))
+					{
 						pieceSelected = true;
 						selectedRow = row;
 						selectedColumn = column;
+					}
+					else
+					{
+						std::cout << "Not your turn\n";
 					}
 				}
 				else {
@@ -588,7 +700,7 @@ int main(int argc, char* argv[])
 						
 					}
 					
-					else if (isFriendlyPiece(pieceID, piece))
+					else if (isFriendlyPiece(pieceID, piece) && ((whiteTurn && IsWhitePiece(piece)) || (!whiteTurn && IsBlackPiece(piece))))
 					{
 						selectedRow = row;
 						selectedColumn = column;
@@ -596,10 +708,13 @@ int main(int argc, char* argv[])
 						
 					}
 
-					else if (IsValidMove(selectedRow, selectedColumn, row, column, pieceID, board))
+					else if (IsLegalMove(selectedRow, selectedColumn, row, column, board))
 					{
-						board[row][column] = board[selectedRow][selectedColumn];							
-						board[selectedRow][selectedColumn] = EMPTY;
+						MakeMove(selectedRow, selectedColumn, row, column, board);
+
+						whiteTurn = !whiteTurn;
+
+						std::cout << (whiteTurn ? "White's turn\n" : "Black's turn\n");
 
 						pieceSelected = false;
 						selectedColumn = -1;
@@ -609,7 +724,6 @@ int main(int argc, char* argv[])
 					{
 						std::cout << "ILLEGAL MOVE\n";
 					}
-					
 				}
 			}
 		}
