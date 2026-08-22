@@ -30,6 +30,30 @@ int board[8][8] = {
 	{WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK}
 };
 
+// variables for selected pieces (Game-state variables)
+
+bool whiteTurn = true;
+bool gameOver = false;
+
+bool whiteKingMoved = false;
+bool blackKingMoved = false;
+
+bool whiteKingSideRookMoved = false;
+bool whiteQueenSideRookMoved = false;
+
+bool blackKingSideRookMoved = false;
+bool blackQueenSideRookMoved = false;
+
+bool enPassantAvailable = false;
+int enPassantRow = -1;
+int enPassantColumn = -1;
+
+bool promotionPending = false;
+int promotionRow = -1;
+int promotionColumn = -1;
+
+// variables for selected pieces (Game-state variables)
+
 const int knightMoves[8][2] = { {-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{ 1,2 },{ 2,-1 },{ 2,1 } };
 
 const int kingMoves[8][2] = { {-1, -1},{-1,  0},{-1,  1},{ 0, -1},{ 0,  1},{ 1, -1},{ 1,  0},{ 1,  1} };
@@ -53,6 +77,9 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 
 	return texture;
 }
+
+bool IsValidCastle(int fromRow, int fromColumn, int toRow, int toColumn, int pieceID, int board[8][8]);
+bool IsValidEnPassant(int fromRow, int fromColumn, int toRow, int toColumn, int PieceID, int board[8][8]);
 bool isEnemyPiece(int movingPiece, int targetPiece) {
 	if (movingPiece <= WHITE_KING && movingPiece > EMPTY) 
 	{
@@ -310,6 +337,10 @@ bool IsValidMove(int selectedRow, int selectedColumn, int destinationRow, int de
 	{
 	case WHITE_PAWN:
 	case BLACK_PAWN:
+		if (IsValidEnPassant(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board))
+		{
+			return true;
+		}
 		return IsValidPawnMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
 	case WHITE_ROOK:
 	case BLACK_ROOK:
@@ -325,6 +356,9 @@ bool IsValidMove(int selectedRow, int selectedColumn, int destinationRow, int de
 		return IsValidQueenMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
 	case WHITE_KING:
 	case BLACK_KING:
+		if (abs(destinationColumn - selectedColumn) == 2) {
+			return IsValidCastle(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
+		}
 		return IsValidKingMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
 	}
 
@@ -522,8 +556,88 @@ bool IsLegalMove(int fromRow, int fromColumn, int toRow, int toColumn, int board
 
 void MakeMove(int fromRow,int fromColumn,int toRow,int toColumn,int board[8][8])
 {
-	board[toRow][toColumn] = board[fromRow][fromColumn];
+	int movingPiece = board[fromRow][fromColumn];
+
+	bool isEnPassant = IsValidEnPassant(fromRow, fromColumn, toRow, toColumn, movingPiece, board);
+	bool createsEnPassant = (movingPiece == WHITE_PAWN || movingPiece == BLACK_PAWN) && std::abs(toRow - fromRow) == 2;
+
+	board[toRow][toColumn] = movingPiece;
 	board[fromRow][fromColumn] = EMPTY;
+
+	if (isEnPassant)
+	{
+		board[enPassantRow][enPassantColumn] = EMPTY;
+	}
+
+	enPassantAvailable = false;
+	enPassantRow = -1;
+	enPassantColumn = -1;
+
+	if (createsEnPassant)
+	{
+		enPassantAvailable = true;
+		enPassantRow = toRow;
+		enPassantColumn = toColumn;
+	}
+
+	if (movingPiece == WHITE_PAWN && toRow == 0)
+	{
+		promotionPending = true;
+		promotionRow = toRow;
+		promotionColumn = toColumn;
+	}
+	else if (movingPiece == BLACK_PAWN && toRow == 7)
+	{
+		promotionPending = true;
+		promotionRow = toRow;
+		promotionColumn = toColumn;
+	}
+
+	if ((movingPiece == WHITE_KING || movingPiece == BLACK_KING) && std::abs(toColumn - fromColumn) == 2)
+	{
+		if (toColumn > fromColumn)
+		{
+			board[fromRow][toColumn - 1] = board[fromRow][7];
+			board[fromRow][7] = EMPTY;
+		}
+		else 
+		{
+			board[fromRow][toColumn + 1] = board[fromRow][0];
+			board[fromRow][0] = EMPTY;
+		}
+	}
+
+	if (movingPiece == WHITE_KING) 
+	{
+		whiteKingMoved = true;
+	}
+	else if (movingPiece == BLACK_KING)
+	{
+		blackKingMoved = true;
+	}
+
+	if (movingPiece == WHITE_ROOK)
+	{
+		if (fromRow == 7 && fromColumn == 0)
+		{
+			whiteQueenSideRookMoved = true;
+		}
+		else if (fromRow == 7 && fromColumn == 7)
+		{
+			whiteKingSideRookMoved = true;
+		}
+	}
+	if (movingPiece == BLACK_ROOK)
+	{
+		if (fromRow == 0 && fromColumn == 0)
+		{
+			blackQueenSideRookMoved = true;
+		}
+		else if (fromRow == 0 && fromColumn == 7)
+		{
+			blackKingSideRookMoved = true;
+		}
+	}
 }
 
 bool IsCheckmate(int board[8][8], int kingPiece)
@@ -606,21 +720,274 @@ bool IsStalemate(int board[8][8], int kingPiece)
 	return true;
 }
 
+bool IsValidCastle(int fromRow, int fromColumn, int toRow, int toColumn, int pieceID, int board[8][8])
+{
+	if (pieceID != WHITE_KING && pieceID != BLACK_KING)
+	{
+		return false;
+	}
+
+	bool kingSide = (toColumn > fromColumn);
+	bool queenSide = (toColumn < fromColumn);
+
+	if (std::abs(toColumn - fromColumn) != 2)
+	{
+		return false;
+	}
+
+	if (pieceID == WHITE_KING && whiteKingMoved)
+	{
+		return false;
+	}
+
+	if (pieceID == BLACK_KING && blackKingMoved)
+	{
+		return false;
+	}
+
+	if (IsKingInCheck(board, pieceID))
+	{
+		return false;
+	}
+
+	if (pieceID == WHITE_KING)
+	{
+		if (kingSide)
+		{
+			if (whiteKingSideRookMoved || board[7][7] != WHITE_ROOK)
+			{
+				return false;
+			}
+		}
+		else if(queenSide)
+		{
+			if (whiteQueenSideRookMoved || board[7][0] != WHITE_ROOK)
+			{
+				return false;
+			}
+		}
+	}
+	else
+	{
+		if (kingSide)
+		{
+			if (blackKingSideRookMoved ||
+				board[0][7] != BLACK_ROOK)
+			{
+				return false;
+			}
+		}
+		else if (queenSide)
+		{
+			if (blackQueenSideRookMoved ||
+				board[0][0] != BLACK_ROOK)
+			{
+				return false;
+			}
+		}
+	}
+
+	if (pieceID == WHITE_KING)
+	{
+		if (kingSide)
+		{
+			if (board[7][5] != EMPTY || board[7][6] != EMPTY)
+			{
+				return false;
+			}
+		}
+		else if (queenSide)
+		{
+			if (board[7][1] != EMPTY || board[7][2] != EMPTY || board[7][3] != EMPTY)
+			{
+				return false;
+			}
+		}
+	}
+	else
+	{
+		if (kingSide)
+		{
+			if (board[0][5] != EMPTY || board[0][6] != EMPTY)
+			{
+				return false;
+			}
+		}
+		else if (queenSide)
+		{
+			if (board[0][1] != EMPTY || board[0][2] != EMPTY || board[0][3] != EMPTY)
+			{
+				return false;
+			}
+		}
+	}
+
+	int passColumn;
+
+	if (kingSide)
+	{
+		passColumn = fromColumn + 1;
+	}
+	else
+	{
+		passColumn = fromColumn - 1;
+	}
+
+	int capturedPiece = board[fromRow][passColumn];
+
+	board[fromRow][passColumn] = pieceID;
+	board[fromRow][fromColumn] = EMPTY;
+
+	bool kingPassesThroughCheck = IsKingInCheck(board, pieceID);
+
+	board[fromRow][fromColumn] = pieceID;
+	board[fromRow][passColumn] = capturedPiece;
+
+	if (kingPassesThroughCheck)
+	{
+		return false;
+	}
+
+	int capturedDestination = board[toRow][toColumn];
+
+	board[toRow][toColumn] = pieceID;
+	board[fromRow][fromColumn] = EMPTY;
+
+	bool kingEndsInCheck = IsKingInCheck(board, pieceID);
+
+	board[fromRow][fromColumn] = pieceID;
+	board[toRow][toColumn] = capturedDestination;
+
+	if (kingEndsInCheck)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool IsValidEnPassant(int fromRow, int fromColumn, int toRow, int toColumn, int PieceID, int board[8][8])
+{
+	
+	if (!enPassantAvailable)
+	{
+		return false;
+	}
+
+	if (PieceID != WHITE_PAWN && PieceID != BLACK_PAWN)
+	{
+		return false;
+	}
+
+	if (board[toRow][toColumn] != EMPTY)
+	{
+		return false;
+	}
+
+	if (std::abs(toColumn - fromColumn) != 1) 
+	{
+		return false;
+	}
+
+	int direction;
+
+	if (PieceID == WHITE_PAWN)
+	{
+		direction = -1;
+	}
+	else
+	{
+		direction = 1;
+	}
+
+	if (toRow - fromRow != direction)
+	{
+		return false;
+	}
+
+	if (enPassantRow != fromRow || enPassantColumn != toColumn)
+	{
+		return false;
+	}
+
+	int capturedPawn = board[enPassantRow][enPassantColumn];
+
+	if (PieceID == WHITE_PAWN && capturedPawn != BLACK_PAWN)
+	{
+		return false;
+	}
+
+	if (PieceID == BLACK_PAWN && capturedPawn != WHITE_PAWN)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void PromotePawn(int row, int column, int promotedPiece, int board[8][8])
+{
+	int pawn = board[row][column];
+
+	if (pawn == WHITE_PAWN)
+	{
+		if (promotedPiece == WHITE_QUEEN || promotedPiece == WHITE_ROOK || promotedPiece == WHITE_BISHOP || promotedPiece == WHITE_KNIGHT)
+		{
+			board[row][column] = promotedPiece;
+		}
+	}
+	else if (pawn == BLACK_PAWN)
+	{
+		if (promotedPiece == BLACK_QUEEN || promotedPiece == BLACK_ROOK || promotedPiece == BLACK_BISHOP || promotedPiece == BLACK_KNIGHT)
+		{
+			board[row][column] = promotedPiece;
+		}
+	}
+
+	promotionPending = false;
+	promotionRow = -1;
+	promotionColumn = -1;
+}
+
+void FinishMove(int board[8][8])
+{
+	whiteTurn = !whiteTurn;
+	int opponentKing = whiteTurn ? WHITE_KING : BLACK_KING;
+
+	if (IsCheckmate(board, opponentKing))
+	{
+		std::cout << "CHECKMATE!\n";
+
+		if (opponentKing == WHITE_KING)
+		{
+			std::cout << "Black wins!\n";
+		}
+		else
+		{
+			std::cout << "White wins!\n";
+		}
+
+		gameOver = true;
+	}
+	else if (IsStalemate(board, opponentKing))
+	{
+		std::cout << "It's A Draw.\n";
+		gameOver = true;
+	}
+	else
+	{
+		if (IsKingInCheck(board, opponentKing))
+		{
+			std::cout << "CHECK!\n";
+		}
+
+		std::cout << (whiteTurn ? "White's turn\n" : "Black's turn\n");
+
+	}
+}
+
 int main(int argc, char* argv[])
 {
-	int testBoard[8][8] = {};
-
-	testBoard[0][7] = BLACK_KING;
-	testBoard[0][0] = WHITE_ROOK;
-	testBoard[1][7] = WHITE_KING;
-
-	std::cout << "Checkmate: "
-		<< IsCheckmate(testBoard, BLACK_KING)
-		<< '\n';
-
-	std::cout << "Stalemate: "
-		<< IsStalemate(testBoard, BLACK_KING)
-		<< '\n';
 	// This will initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 		std::cout << "SDL Initialization Failed : " << SDL_GetError() << std::endl;
@@ -685,14 +1052,10 @@ int main(int argc, char* argv[])
 
 	// Creating texture Array
 	
-	// variables for selected pieces
-	bool whiteTurn = true;
-	bool gameOver = false;
+	
 	bool pieceSelected = false;
 	int selectedRow = -1;
 	int selectedColumn = -1;
-
-	// variables for selected pieces
 
 	bool running = true;
 	SDL_Event event;
@@ -705,98 +1068,115 @@ int main(int argc, char* argv[])
 				running = false;
 			}
 
-			if (event.type == SDL_MOUSEBUTTONDOWN) 
+			// PROMOTION INPUT
+			if (promotionPending)
 			{
-				if (gameOver)
+				if (event.type == SDL_KEYDOWN)
 				{
-					std::cout << "Game is over!\n";
-					return 0;
+					int promotedPiece = EMPTY;
+
+					if (event.key.keysym.sym == SDLK_q)
+					{
+						promotedPiece = whiteTurn ? WHITE_QUEEN : BLACK_QUEEN;
+					}
+					else if (event.key.keysym.sym == SDLK_r)
+					{
+						promotedPiece = whiteTurn ? WHITE_ROOK : BLACK_ROOK;
+					}
+					else if (event.key.keysym.sym == SDLK_b)
+					{
+						promotedPiece = whiteTurn ? WHITE_BISHOP : BLACK_BISHOP;
+					}
+					else if (event.key.keysym.sym == SDLK_n)
+					{
+						promotedPiece = whiteTurn ? WHITE_KNIGHT : BLACK_KNIGHT;
+					}
+
+					if (promotedPiece != EMPTY)
+					{
+						PromotePawn(promotionRow, promotionColumn, promotedPiece, board);
+
+						std::cout << "Pawn promoted!\n";
+
+						FinishMove(board);
+					}
 				}
-				std::cout << "X = " << event.button.x <<std::endl;
-				std::cout << "Y = " << event.button.y << std::endl;
-
-				int column = event.button.x / 100;
-				int row = event.button.y / 100;
-				std::cout << "Row = " << row << std::endl;
-				std::cout << "Column = " << column << std::endl;
-
-				int piece = board[row][column];
-
-				if (!pieceSelected) {
-					if (piece == EMPTY) {
-						std::cout << "Empty square selected" << std::endl;
-					}
-					else if (whiteTurn && IsWhitePiece(piece) || !whiteTurn && IsBlackPiece(piece))
+			}
+			else
+			{
+				if (event.type == SDL_MOUSEBUTTONDOWN)
+				{
+					if (gameOver)
 					{
-						pieceSelected = true;
-						selectedRow = row;
-						selectedColumn = column;
+						std::cout << "Game is over!\n";
+						return 0;
 					}
-					else
-					{
-						std::cout << "Not your turn\n";
-					}
-				}
-				else {
-					int pieceID = board[selectedRow][selectedColumn];
-					if (selectedRow == row && selectedColumn == column) 
-					{
-						std::cout << "Deselecting piece\n";
+					std::cout << "X = " << event.button.x << std::endl;
+					std::cout << "Y = " << event.button.y << std::endl;
 
-						pieceSelected = false;
-						selectedRow = -1;
-						selectedColumn = -1;
-						
-					}
-					
-					else if (isFriendlyPiece(pieceID, piece) && ((whiteTurn && IsWhitePiece(piece)) || (!whiteTurn && IsBlackPiece(piece))))
-					{
-						selectedRow = row;
-						selectedColumn = column;
-						pieceSelected = true;
-						
-					}
+					int column = event.button.x / 100;
+					int row = event.button.y / 100;
+					std::cout << "Row = " << row << std::endl;
+					std::cout << "Column = " << column << std::endl;
 
-					else if (IsLegalMove(selectedRow, selectedColumn, row, column, board))
-					{
-						MakeMove(selectedRow, selectedColumn, row, column, board);
+					int piece = board[row][column];
 
-						whiteTurn = !whiteTurn;
-
-						int opponentKing = whiteTurn ? WHITE_KING : BLACK_KING;
-
-						if (IsCheckmate(board, opponentKing))
+					if (!pieceSelected) {
+						if (piece == EMPTY) {
+							std::cout << "Empty square selected" << std::endl;
+						}
+						else if (whiteTurn && IsWhitePiece(piece) || !whiteTurn && IsBlackPiece(piece))
 						{
-							std::cout << "CHECKMATE!\n";
+							pieceSelected = true;
+							selectedRow = row;
+							selectedColumn = column;
+						}
+						else
+						{
+							std::cout << "Not your turn\n";
+						}
+					}
+					else {
+						int pieceID = board[selectedRow][selectedColumn];
+						if (selectedRow == row && selectedColumn == column)
+						{
+							std::cout << "Deselecting piece\n";
 
-							if (opponentKing == WHITE_KING)
+							pieceSelected = false;
+							selectedRow = -1;
+							selectedColumn = -1;
+
+						}
+
+						else if (isFriendlyPiece(pieceID, piece) && ((whiteTurn && IsWhitePiece(piece)) || (!whiteTurn && IsBlackPiece(piece))))
+						{
+							selectedRow = row;
+							selectedColumn = column;
+							pieceSelected = true;
+
+						}
+
+						else if (IsLegalMove(selectedRow, selectedColumn, row, column, board))
+						{
+							MakeMove(selectedRow, selectedColumn, row, column, board);
+
+							if (promotionPending)
 							{
-								std::cout << "Black wins!\n";
+								std::cout << "Choose promotion piece: Q = Queen, R = Rook, B = Bishop, N = Knight\n";
 							}
 							else
 							{
-								std::cout << "White wins!\n";
+								FinishMove(board);
 							}
 
-							gameOver = true;
+							pieceSelected = false;
+							selectedColumn = -1;
+							selectedRow = -1;
 						}
-						else if (IsStalemate(board, opponentKing))
+						else
 						{
-							std::cout << "It's A Draw.\n";
-							gameOver = true;
+							std::cout << "ILLEGAL MOVE\n";
 						}
-						else 
-						{
-							std::cout << (whiteTurn ? "White's turn\n" : "Black's turn\n");
-						}
-
-						pieceSelected = false;
-						selectedColumn = -1;
-						selectedRow = -1;
-					}
-					else 
-					{
-						std::cout << "ILLEGAL MOVE\n";
 					}
 				}
 			}
