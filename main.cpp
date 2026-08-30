@@ -31,74 +31,45 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 	return texture;
 }
 
-void TestAllPromotionRedo()
+void TestInsufficientMaterialGameOver()
 {
-	int promotionPieces[4] =
-	{
-		WHITE_QUEEN,
-		WHITE_ROOK,
-		WHITE_BISHOP,
-		WHITE_KNIGHT
-	};
+	int board[8][8] = {};
+	GameState game;
 
-	for (int i = 0; i < 4; i++)
-	{
-		int board[8][8] = {};
-		GameState game;
+	board[7][4] = WHITE_KING;    // e1
+	board[6][3] = BLACK_BISHOP;  // d2
+	board[0][4] = BLACK_KING;    // e8
 
-		board[1][0] = WHITE_PAWN;   // a7
-		board[7][4] = WHITE_KING;   // e1
-		board[1][7] = BLACK_KING;   // h7
+	game.whiteTurn = true;
 
-		game.whiteTurn = true;
+	std::cout << "\n--- INSUFFICIENT MATERIAL GAME TEST ---\n";
 
-		int promotedPiece = promotionPieces[i];
+	// White king captures the final bishop
+	MakeMove(7, 4, 6, 3, board, game);
+	FinishMove(board, game);
 
-		std::cout << "\nTesting promotion piece: "
-			<< promotedPiece << "\n";
+	std::cout << "Game over = "
+		<< game.gameOver << "\n";
 
-		// a7 -> a8
-		MakeMove(1, 0, 0, 0, board, game);
+	UndoMove(board, game);
 
-		PromotePawn(
-			0,
-			0,
-			promotedPiece,
-			board,
-			game
-		);
+	std::cout << "\nAfter undo:\n";
+	std::cout << "Game over = " << game.gameOver << "\n";
+	std::cout << "White king e1 = " << board[7][4] << "\n";
+	std::cout << "Black bishop d2 = " << board[6][3] << "\n";
 
-		FinishMove(board, game);
+	RedoMove(board, game);
 
-		std::cout << "After promotion: "
-			<< board[0][0] << "\n";
-
-		UndoMove(board, game);
-
-		std::cout << "After undo: "
-			<< board[1][0] << "\n";
-
-		RedoMove(board, game);
-
-		std::cout << "After redo: "
-			<< board[0][0] << "\n";
-
-		if (board[0][0] == promotedPiece)
-		{
-			std::cout << "PASSED\n";
-		}
-		else
-		{
-			std::cout << "FAILED\n";
-		}
-	}
+	std::cout << "\nAfter redo:\n";
+	std::cout << "Game over = " << game.gameOver << "\n";
+	std::cout << "White king d2 = " << board[6][3] << "\n";
 }
 
 int main(int argc, char* argv[])
 {
 	InitializeBoard(board);
 	
-	TestAllPromotionRedo();
+	TestInsufficientMaterialGameOver();
 
 	// This will initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {

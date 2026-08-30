@@ -46,3 +46,5 @@ bool IsStalemate(int board[8][8], int kingPiece, GameState& game);
 void UndoMove(int board[8][8], GameState& game);
 
 void RedoMove(int board[8][8], GameState& game);
+
+bool IsInsufficientMaterial(int board[8][8]);

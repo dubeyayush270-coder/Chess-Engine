@@ -304,6 +304,11 @@ void FinishMove(int board[8][8], GameState& game)
 		std::cout << "It's A Draw.\n";
 		game.gameOver = true;
 	}
+	else if (IsInsufficientMaterial(board))
+	{
+		std::cout << "Draw by insufficient material.\n";
+		game.gameOver = true;
+	}
 	else
 	{
 		if (IsKingInCheck(board, sideToMoveKing))
@@ -520,3 +525,74 @@ void RedoMove(int board[8][8], GameState& game)
 	std::cout << "Move redone.\n";
 }
 
+bool IsInsufficientMaterial(int board[8][8])
+{
+	int nonKingPieces = 0;
+	int remainingPiece = EMPTY;
+
+	int bishopCount = 0;
+	int firstBishopColor = -1;
+	int secondBishopColor = -1;
+
+	for (int row = 0; row < 8; row++)
+	{
+		for (int column = 0; column < 8; column++)
+		{
+			int piece = board[row][column];
+
+			if (piece == EMPTY)
+			{
+				continue;
+			}
+
+			if (piece == WHITE_KING || piece == BLACK_KING)
+			{
+				continue;
+			}
+
+			nonKingPieces++;
+			remainingPiece = piece;
+
+			if (piece == WHITE_BISHOP || piece == BLACK_BISHOP)
+			{
+				int squareColor = (row + column) % 2;
+
+				if (bishopCount == 0)
+				{
+					firstBishopColor = squareColor;
+				}
+				else if (bishopCount == 1)
+				{
+					secondBishopColor = squareColor;
+				}
+
+				bishopCount++;
+			}
+
+		}
+	}
+
+	if (nonKingPieces == 0)
+	{
+		return true;
+	}
+
+	if (nonKingPieces == 1)
+	{
+		if (remainingPiece == WHITE_BISHOP || remainingPiece == BLACK_BISHOP ||
+			remainingPiece == WHITE_KNIGHT || remainingPiece == BLACK_KNIGHT)
+		{
+			return true;
+		}
+	}
+
+	if (nonKingPieces == 2 && bishopCount == 2)
+	{
+		if (firstBishopColor == secondBishopColor)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
