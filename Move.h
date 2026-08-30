@@ -45,4 +45,6 @@ struct Move
 	int promotionColumn;
 
 	int promotedPiece;
+
+	int halfMoveClock;
 };

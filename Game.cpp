@@ -92,9 +92,10 @@ void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8]
 	int movingPiece = board[fromRow][fromColumn];
 	int capturedPiece = board[toRow][toColumn];
 
+
 	bool isEnPassant = IsValidEnPassant(fromRow, fromColumn, toRow, toColumn, movingPiece, board, game);
 
-	Move move;
+	Move move{};
 
 	move.wasCastling = false;
 
@@ -119,6 +120,8 @@ void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8]
 	//Save game state before the move
 	move.whiteTurn = game.whiteTurn;
 	move.gameOver = game.gameOver;
+
+	move.halfMoveClock = game.halfMoveClock;
 
 	move.whiteKingMoved = game.whiteKingMoved;
 	move.blackKingMoved = game.blackKingMoved;
@@ -169,7 +172,17 @@ void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8]
 	//Store the move
 	game.moveHistory.push_back(move);
 
+	bool isPawnMove = movingPiece == WHITE_PAWN || movingPiece == BLACK_PAWN;
+	bool isCapture = capturedPiece != EMPTY;
 
+	if (isPawnMove || isCapture)
+	{
+		game.halfMoveClock = 0;
+	}
+	else
+	{
+		game.halfMoveClock++;
+	}
 
 	//bool isEnPassant = IsValidEnPassant(fromRow, fromColumn, toRow, toColumn, movingPiece, board, game);
 	bool createsEnPassant = (movingPiece == WHITE_PAWN || movingPiece == BLACK_PAWN) && std::abs(toRow - fromRow) == 2;
@@ -307,6 +320,11 @@ void FinishMove(int board[8][8], GameState& game)
 	else if (IsInsufficientMaterial(board))
 	{
 		std::cout << "Draw by insufficient material.\n";
+		game.gameOver = true;
+	}
+	else if (IsFiftyMoveRule(game))
+	{
+		std::cout << "Draw by fifty-move rule.\n";
 		game.gameOver = true;
 	}
 	else
@@ -476,6 +494,8 @@ void UndoMove(int board[8][8], GameState& game)
 	game.whiteTurn = move.whiteTurn;
 	game.gameOver = move.gameOver;
 
+	game.halfMoveClock = move.halfMoveClock;
+
 	game.whiteKingMoved = move.whiteKingMoved;
 	game.blackKingMoved = move.blackKingMoved;
 
@@ -595,4 +615,9 @@ bool IsInsufficientMaterial(int board[8][8])
 	}
 
 	return false;
+}
+
+bool IsFiftyMoveRule(const GameState& game)
+{
+	return game.halfMoveClock >= 100;
 }

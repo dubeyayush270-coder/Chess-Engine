@@ -26,6 +26,8 @@ struct GameState
 	int promotionRow = -1;
 	int promotionColumn = -1;
 
+	int halfMoveClock = 0;
+
 	std::vector<Move> moveHistory;
 
 	std::vector<Move> redoHistory;
@@ -48,3 +50,5 @@ void UndoMove(int board[8][8], GameState& game);
 void RedoMove(int board[8][8], GameState& game);
 
 bool IsInsufficientMaterial(int board[8][8]);
+
+bool IsFiftyMoveRule(const GameState& game);

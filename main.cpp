@@ -31,45 +31,11 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 	return texture;
 }
 
-void TestInsufficientMaterialGameOver()
-{
-	int board[8][8] = {};
-	GameState game;
-
-	board[7][4] = WHITE_KING;    // e1
-	board[6][3] = BLACK_BISHOP;  // d2
-	board[0][4] = BLACK_KING;    // e8
-
-	game.whiteTurn = true;
-
-	std::cout << "\n--- INSUFFICIENT MATERIAL GAME TEST ---\n";
-
-	// White king captures the final bishop
-	MakeMove(7, 4, 6, 3, board, game);
-	FinishMove(board, game);
-
-	std::cout << "Game over = "
-		<< game.gameOver << "\n";
-
-	UndoMove(board, game);
-
-	std::cout << "\nAfter undo:\n";
-	std::cout << "Game over = " << game.gameOver << "\n";
-	std::cout << "White king e1 = " << board[7][4] << "\n";
-	std::cout << "Black bishop d2 = " << board[6][3] << "\n";
-
-	RedoMove(board, game);
-
-	std::cout << "\nAfter redo:\n";
-	std::cout << "Game over = " << game.gameOver << "\n";
-	std::cout << "White king d2 = " << board[6][3] << "\n";
-}
 
 int main(int argc, char* argv[])
 {
 	InitializeBoard(board);
 	
-	TestInsufficientMaterialGameOver();
 
 	// This will initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
