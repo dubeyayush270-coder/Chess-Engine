@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+#include "Move.h"
 
 struct GameState
 {
@@ -24,12 +26,14 @@ struct GameState
 	int promotionRow = -1;
 	int promotionColumn = -1;
 
-	
+	std::vector<Move> moveHistory;
+
+	std::vector<Move> redoHistory;
 };
 
 bool IsLegalMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8][8], GameState& game);
 
-void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8][8], GameState& game);
+void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8][8], GameState& game, bool isRedo = false);
 
 void FinishMove(int board[8][8], GameState& game);
 
@@ -38,3 +42,7 @@ void PromotePawn(int row, int column, int promotedPiece, int board[8][8], GameSt
 bool IsCheckmate(int board[8][8], int kingPiece, GameState& game);
 
 bool IsStalemate(int board[8][8], int kingPiece, GameState& game);
+
+void UndoMove(int board[8][8], GameState& game);
+
+void RedoMove(int board[8][8], GameState& game);

@@ -8,26 +8,6 @@ const int knightMoves[8][2] = { {-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{ 1,2 },{ 2
 const int kingMoves[8][2] = { {-1, -1},{-1,  0},{-1,  1},{ 0, -1},{ 0,  1},{ 1, -1},{ 1,  0},{ 1,  1} };
 
 
-bool isEnemyPiece(int movingPiece, int targetPiece) {
-	if (movingPiece <= WHITE_KING && movingPiece > EMPTY)
-	{
-		if (targetPiece > WHITE_KING)
-		{
-			return true;
-		}
-	}
-	else
-	{
-		if (targetPiece < BLACK_PAWN && targetPiece > EMPTY)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-
-
 bool findKing(int board[8][8], int kingPiece, int& kingRow, int& kingColumn)
 {
 	for (int row = 0; row < 8; row++)
@@ -420,7 +400,7 @@ bool IsValidMove(int selectedRow, int selectedColumn, int destinationRow, int de
 		return IsValidQueenMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
 	case WHITE_KING:
 	case BLACK_KING:
-		if (abs(destinationColumn - selectedColumn) == 2) {
+		if (std::abs(destinationColumn - selectedColumn) == 2) {
 			return IsValidCastle(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board, game);
 		}
 		return IsValidKingMove(selectedRow, selectedColumn, destinationRow, destinationColumn, pieceID, board);
@@ -434,6 +414,31 @@ bool IsValidCastle(int fromRow, int fromColumn, int toRow, int toColumn, int pie
 	if (pieceID != WHITE_KING && pieceID != BLACK_KING)
 	{
 		return false;
+	}
+
+	if (pieceID == WHITE_KING)
+	{
+		if (fromRow != 7 || fromColumn != 4 || toRow != 7)
+		{
+			return false;
+		}
+
+		if (toColumn != 6 && toColumn != 2)
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (fromRow != 0 || fromColumn != 4 || toRow != 0)
+		{
+			return false;
+		}
+
+		if (toColumn != 6 && toColumn != 2)
+		{
+			return false;
+		}
 	}
 
 	bool kingSide = (toColumn > fromColumn);

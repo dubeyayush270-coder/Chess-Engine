@@ -25,3 +25,21 @@ bool isFriendlyPiece(int movingPiece, int targetPiece)
 
 	return false;
 }
+
+bool isEnemyPiece(int movingPiece, int targetPiece) {
+	if (movingPiece <= WHITE_KING && movingPiece > EMPTY)
+	{
+		if (targetPiece > WHITE_KING)
+		{
+			return true;
+		}
+	}
+	else
+	{
+		if (targetPiece < BLACK_PAWN && targetPiece > EMPTY)
+		{
+			return true;
+		}
+	}
+	return false;
+}

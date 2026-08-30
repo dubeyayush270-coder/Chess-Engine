@@ -3,8 +3,6 @@
 #include "ChessPieces.h"
 #include "Game.h"
 
-bool isEnemyPiece(int pieceID, int targetPiece);
-
 bool findKing(int board[8][8], int kingPiece, int& kingRow, int& kingColumn);
 
 bool IsValidPawnMove(

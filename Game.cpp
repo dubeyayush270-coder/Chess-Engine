@@ -19,35 +19,159 @@ bool IsLegalMove(int fromRow, int fromColumn, int toRow, int toColumn, int board
 
 	int movingPiece = board[fromRow][fromColumn];
 
+	int capturedPiece = board[toRow][toColumn];
+
 	if (movingPiece == EMPTY)
 	{
 		return false;
 	}
-	int capturedPiece = board[toRow][toColumn];
+
+	if (game.whiteTurn && !IsWhitePiece(movingPiece))
+	{
+		return false;
+	}
+
+	if (!game.whiteTurn && !IsBlackPiece(movingPiece))
+	{
+		return false;
+	}
+
+
+	int enemyKing = IsWhitePiece(movingPiece) ? BLACK_KING : WHITE_KING;
+
+	if (capturedPiece == enemyKing)
+	{
+		return false;
+	}
 
 	if (!IsValidMove(fromRow, fromColumn, toRow, toColumn, movingPiece, board, game))
 	{
 		return false;
 	}
 
+	bool isEnPassant = false;
+
+	if (movingPiece == WHITE_PAWN || movingPiece == BLACK_PAWN) 
+	{
+		isEnPassant = IsValidEnPassant(fromRow, fromColumn, toRow, toColumn, movingPiece, board, game);
+	}
+
+	int enPassantCapturedPiece = EMPTY;
+
+	if (isEnPassant) 
+	{
+		enPassantCapturedPiece = board[game.enPassantRow][game.enPassantColumn];
+		board[game.enPassantRow][game.enPassantColumn] = EMPTY;
+	}
+
 	board[toRow][toColumn] = movingPiece;
 	board[fromRow][fromColumn] = EMPTY;
 
-	int kingPiece = (movingPiece > EMPTY && movingPiece < BLACK_PAWN) ? WHITE_KING : BLACK_KING;
+	int kingPiece = (IsWhitePiece(movingPiece)) ? WHITE_KING : BLACK_KING;
 
 	bool kingInCheck = IsKingInCheck(board, kingPiece);
 
 	board[fromRow][fromColumn] = movingPiece;
 	board[toRow][toColumn] = capturedPiece;
 
+	if (isEnPassant)
+	{
+		board[game.enPassantRow][game.enPassantColumn] = enPassantCapturedPiece;
+	}
+
 	return !kingInCheck;
 }
 
-void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8][8], GameState& game)
+void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8][8], GameState& game, bool isRedo)
 {
+	if (!isRedo)
+	{
+		game.redoHistory.clear();
+	}
+
 	int movingPiece = board[fromRow][fromColumn];
+	int capturedPiece = board[toRow][toColumn];
 
 	bool isEnPassant = IsValidEnPassant(fromRow, fromColumn, toRow, toColumn, movingPiece, board, game);
+
+	Move move;
+
+	move.wasCastling = false;
+
+	move.rookFromRow = -1;
+	move.rookFromColumn = -1;
+	move.rookToRow = -1;
+	move.rookToColumn = -1;
+
+	move.fromRow = fromRow;
+	move.fromColumn = fromColumn;
+
+	move.toRow = toRow;
+	move.toColumn = toColumn;
+
+	move.movedPiece = movingPiece;
+	move.capturedPiece = capturedPiece;
+
+	// Default: not an en passant capture
+	move.enPassantCapturedRow = -1;
+	move.enPassantCapturedColumn = -1;
+
+	//Save game state before the move
+	move.whiteTurn = game.whiteTurn;
+	move.gameOver = game.gameOver;
+
+	move.whiteKingMoved = game.whiteKingMoved;
+	move.blackKingMoved = game.blackKingMoved;
+
+	move.whiteKingSideRookMoved = game.whiteKingSideRookMoved;
+	move.whiteQueenSideRookMoved = game.whiteQueenSideRookMoved;
+
+	move.blackKingSideRookMoved = game.blackKingSideRookMoved;
+	move.blackQueenSideRookMoved = game.blackQueenSideRookMoved;
+
+	move.enPassantAvailable = game.enPassantAvailable;
+	move.enPassantRow = game.enPassantRow;
+	move.enPassantColumn = game.enPassantColumn;
+
+	move.promotionPending = game.promotionPending;
+	move.promotionRow = game.promotionRow;
+	move.promotionColumn = game.promotionColumn;
+
+	move.promotedPiece = EMPTY;
+
+	
+	if (isEnPassant)
+	{
+		move.enPassantCapturedRow = game.enPassantRow;
+		move.enPassantCapturedColumn = game.enPassantColumn;
+	}
+
+	if ((movingPiece == WHITE_KING || movingPiece == BLACK_KING) && std::abs(toColumn - fromColumn) == 2)
+	{
+		move.wasCastling = true;
+
+		move.rookFromRow = fromRow;
+
+		if (toColumn > fromColumn)
+		{
+			move.rookFromColumn = 7;
+			move.rookToColumn = 5;
+		}
+		else
+		{
+			move.rookFromColumn = 0;
+			move.rookToColumn = 3;
+		}
+
+		move.rookToRow = fromRow;
+	}
+
+	//Store the move
+	game.moveHistory.push_back(move);
+
+
+
+	//bool isEnPassant = IsValidEnPassant(fromRow, fromColumn, toRow, toColumn, movingPiece, board, game);
 	bool createsEnPassant = (movingPiece == WHITE_PAWN || movingPiece == BLACK_PAWN) && std::abs(toRow - fromRow) == 2;
 
 	board[toRow][toColumn] = movingPiece;
@@ -116,6 +240,7 @@ void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8]
 			game.whiteKingSideRookMoved = true;
 		}
 	}
+
 	if (movingPiece == BLACK_ROOK)
 	{
 		if (fromRow == 0 && fromColumn == 0)
@@ -127,19 +252,43 @@ void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8]
 			game.blackKingSideRookMoved = true;
 		}
 	}
+
+	if (capturedPiece == WHITE_ROOK)
+	{
+		if (toRow == 7 && toColumn == 0)
+		{
+			game.whiteQueenSideRookMoved = true;
+		}
+		else if (toRow == 7 && toColumn == 7)
+		{
+			game.whiteKingSideRookMoved = true;
+		}
+	}
+
+	if (capturedPiece == BLACK_ROOK)
+	{
+		if (toRow == 0 && toColumn == 0)
+		{
+			game.blackQueenSideRookMoved = true;
+		}
+		else if (toRow == 0 && toColumn == 7)
+		{
+			game.blackKingSideRookMoved = true;
+		}
+	}
 }
 
 
 void FinishMove(int board[8][8], GameState& game)
 {
 	game.whiteTurn = !game.whiteTurn;
-	int opponentKing = game.whiteTurn ? WHITE_KING : BLACK_KING;
+	int sideToMoveKing = game.whiteTurn ? WHITE_KING : BLACK_KING;
 
-	if (IsCheckmate(board, opponentKing, game))
+	if (IsCheckmate(board, sideToMoveKing, game))
 	{
 		std::cout << "CHECKMATE!\n";
 
-		if (opponentKing == WHITE_KING)
+		if (sideToMoveKing == WHITE_KING)
 		{
 			std::cout << "Black wins!\n";
 		}
@@ -150,14 +299,14 @@ void FinishMove(int board[8][8], GameState& game)
 
 		game.gameOver = true;
 	}
-	else if (IsStalemate(board, opponentKing, game))
+	else if (IsStalemate(board, sideToMoveKing, game))
 	{
 		std::cout << "It's A Draw.\n";
 		game.gameOver = true;
 	}
 	else
 	{
-		if (IsKingInCheck(board, opponentKing))
+		if (IsKingInCheck(board, sideToMoveKing))
 		{
 			std::cout << "CHECK!\n";
 		}
@@ -170,12 +319,14 @@ void FinishMove(int board[8][8], GameState& game)
 void PromotePawn(int row, int column, int promotedPiece, int board[8][8], GameState& game)
 {
 	int pawn = board[row][column];
+	bool promotionSuccessful = false;
 
 	if (pawn == WHITE_PAWN)
 	{
 		if (promotedPiece == WHITE_QUEEN || promotedPiece == WHITE_ROOK || promotedPiece == WHITE_BISHOP || promotedPiece == WHITE_KNIGHT)
 		{
 			board[row][column] = promotedPiece;
+			promotionSuccessful = true;
 		}
 	}
 	else if (pawn == BLACK_PAWN)
@@ -183,7 +334,18 @@ void PromotePawn(int row, int column, int promotedPiece, int board[8][8], GameSt
 		if (promotedPiece == BLACK_QUEEN || promotedPiece == BLACK_ROOK || promotedPiece == BLACK_BISHOP || promotedPiece == BLACK_KNIGHT)
 		{
 			board[row][column] = promotedPiece;
+			promotionSuccessful = true;
 		}
+	}
+
+	if (!promotionSuccessful) 
+	{
+		return;
+	}
+
+	if (!game.moveHistory.empty())
+	{
+		game.moveHistory.back().promotedPiece = promotedPiece;
 	}
 
 	game.promotionPending = false;
@@ -253,7 +415,7 @@ bool IsStalemate(int board[8][8], int kingPiece, GameState& game)
 		for (int column = 0; column < 8; column++)
 		{
 			int piece = board[row][column];
-			if (whiteKing && IsWhitePiece(piece) || (!whiteKing && IsBlackPiece(piece)))
+			if ((whiteKing && IsWhitePiece(piece)) || (!whiteKing && IsBlackPiece(piece)))
 			{
 				for (int destinationRow = 0; destinationRow < 8; destinationRow++)
 				{
@@ -270,3 +432,91 @@ bool IsStalemate(int board[8][8], int kingPiece, GameState& game)
 	}
 	return true;
 }
+
+void UndoMove(int board[8][8], GameState& game)
+{
+	if (game.moveHistory.empty())
+	{
+		std::cout << "No moves to undo.\n";
+		return;
+	}
+
+	Move move = game.moveHistory.back();
+
+	board[move.fromRow][move.fromColumn] = move.movedPiece;
+	board[move.toRow][move.toColumn] = move.capturedPiece;
+
+	if (move.enPassantCapturedRow != -1)
+	{
+		int capturedPawn;
+
+		if (move.movedPiece == WHITE_PAWN)
+		{
+			capturedPawn = BLACK_PAWN;
+		}
+		else
+		{
+			capturedPawn = WHITE_PAWN;
+		}
+
+		board[move.enPassantCapturedRow][move.enPassantCapturedColumn] = capturedPawn;
+	}
+
+	if (move.wasCastling)
+	{
+		board[move.rookFromRow][move.rookFromColumn] = board[move.rookToRow][move.rookToColumn];
+		board[move.rookToRow][move.rookToColumn] = EMPTY;
+	}
+
+	game.whiteTurn = move.whiteTurn;
+	game.gameOver = move.gameOver;
+
+	game.whiteKingMoved = move.whiteKingMoved;
+	game.blackKingMoved = move.blackKingMoved;
+
+	game.whiteKingSideRookMoved = move.whiteKingSideRookMoved;
+	game.whiteQueenSideRookMoved = move.whiteQueenSideRookMoved;
+
+	game.blackKingSideRookMoved = move.blackKingSideRookMoved;
+	game.blackQueenSideRookMoved = move.blackQueenSideRookMoved;
+
+	game.enPassantAvailable = move.enPassantAvailable;
+	game.enPassantRow = move.enPassantRow;
+	game.enPassantColumn = move.enPassantColumn;
+
+	game.promotionPending = move.promotionPending;
+	game.promotionRow = move.promotionRow;
+	game.promotionColumn = move.promotionColumn;
+
+	game.moveHistory.pop_back();
+
+	game.redoHistory.push_back(move);
+
+	std::cout << "Move undone.\n";
+}
+
+void RedoMove(int board[8][8], GameState& game)
+{
+	if (game.redoHistory.empty())
+	{
+		std::cout << "No moves to redo.\n";
+		return;
+	}
+
+	Move move = game.redoHistory.back();
+	
+	game.redoHistory.pop_back();
+
+	MakeMove(move.fromRow, move.fromColumn, move.toRow, move.toColumn, board, game, true);
+
+	//If there was a promotion
+	if (move.promotedPiece != EMPTY)
+	{
+		PromotePawn(move.toRow, move.toColumn, move.promotedPiece, board, game);
+	}
+
+	FinishMove(board, game);
+
+	std::cout << "Move redone.\n";
+}
+

@@ -31,13 +31,74 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 	return texture;
 }
 
+void TestAllPromotionRedo()
+{
+	int promotionPieces[4] =
+	{
+		WHITE_QUEEN,
+		WHITE_ROOK,
+		WHITE_BISHOP,
+		WHITE_KNIGHT
+	};
 
+	for (int i = 0; i < 4; i++)
+	{
+		int board[8][8] = {};
+		GameState game;
 
+		board[1][0] = WHITE_PAWN;   // a7
+		board[7][4] = WHITE_KING;   // e1
+		board[1][7] = BLACK_KING;   // h7
+
+		game.whiteTurn = true;
+
+		int promotedPiece = promotionPieces[i];
+
+		std::cout << "\nTesting promotion piece: "
+			<< promotedPiece << "\n";
+
+		// a7 -> a8
+		MakeMove(1, 0, 0, 0, board, game);
+
+		PromotePawn(
+			0,
+			0,
+			promotedPiece,
+			board,
+			game
+		);
+
+		FinishMove(board, game);
+
+		std::cout << "After promotion: "
+			<< board[0][0] << "\n";
+
+		UndoMove(board, game);
+
+		std::cout << "After undo: "
+			<< board[1][0] << "\n";
+
+		RedoMove(board, game);
+
+		std::cout << "After redo: "
+			<< board[0][0] << "\n";
+
+		if (board[0][0] == promotedPiece)
+		{
+			std::cout << "PASSED\n";
+		}
+		else
+		{
+			std::cout << "FAILED\n";
+		}
+	}
+}
 
 int main(int argc, char* argv[])
 {
 	InitializeBoard(board);
-
+	
+	TestAllPromotionRedo();
 
 	// This will initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -156,6 +217,28 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
+				if (event.type == SDL_KEYDOWN)
+				{
+					if (event.key.keysym.sym == SDLK_u)
+					{
+						UndoMove(board, game);
+
+						//Reset Selection
+						pieceSelected = false;
+						selectedRow = -1;
+						selectedColumn = -1;
+					}
+					else if (event.key.keysym.sym == SDLK_r)
+					{
+						RedoMove(board, game);
+
+						//Reset Selection
+						pieceSelected = false;
+						selectedRow = -1;
+						selectedColumn = -1;
+					}
+				}
+
 				if (event.type == SDL_MOUSEBUTTONDOWN)
 				{
 					if (game.gameOver)

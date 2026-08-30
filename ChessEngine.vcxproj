@@ -185,6 +185,7 @@ copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(Out
     <ClInclude Include="Board.h" />
     <ClInclude Include="ChessPieces.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="Move.h" />
     <ClInclude Include="MoveValidation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -24,3 +24,5 @@ bool IsWhitePiece(int piece);
 bool IsBlackPiece(int piece);
 
 bool isFriendlyPiece(int movingPiece, int targetPiece);
+
+bool isEnemyPiece(int movingPiece, int targetPiece);
