@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include "Move.h"
 
 struct GameState
@@ -31,6 +32,8 @@ struct GameState
 	std::vector<Move> moveHistory;
 
 	std::vector<Move> redoHistory;
+
+	std::vector<std::string> positionHistory;
 };
 
 bool IsLegalMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8][8], GameState& game);
@@ -52,3 +55,9 @@ void RedoMove(int board[8][8], GameState& game);
 bool IsInsufficientMaterial(int board[8][8]);
 
 bool IsFiftyMoveRule(const GameState& game);
+
+bool IsThreefoldRepetition(const GameState& game);
+
+std::string GeneratePositionKey(int board[8][8], const GameState& game);
+
+void RecordPosition(int board[8][8], GameState& game);

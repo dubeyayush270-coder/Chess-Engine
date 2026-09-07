@@ -295,6 +295,9 @@ void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8]
 void FinishMove(int board[8][8], GameState& game)
 {
 	game.whiteTurn = !game.whiteTurn;
+
+	RecordPosition(board, game);
+
 	int sideToMoveKing = game.whiteTurn ? WHITE_KING : BLACK_KING;
 
 	if (IsCheckmate(board, sideToMoveKing, game))
@@ -327,7 +330,12 @@ void FinishMove(int board[8][8], GameState& game)
 		std::cout << "Draw by fifty-move rule.\n";
 		game.gameOver = true;
 	}
-	else
+	else if (IsThreefoldRepetition(game))
+	{
+		std::cout << "Draw by threefold repetition.\n";
+		game.gameOver = true;
+	}
+	else 
 	{
 		if (IsKingInCheck(board, sideToMoveKing))
 		{
@@ -513,6 +521,11 @@ void UndoMove(int board[8][8], GameState& game)
 	game.promotionRow = move.promotionRow;
 	game.promotionColumn = move.promotionColumn;
 
+	if (game.positionHistory.size() > 1)
+	{
+		game.positionHistory.pop_back();
+	}
+
 	game.moveHistory.pop_back();
 
 	game.redoHistory.push_back(move);
@@ -620,4 +633,145 @@ bool IsInsufficientMaterial(int board[8][8])
 bool IsFiftyMoveRule(const GameState& game)
 {
 	return game.halfMoveClock >= 100;
+}
+
+bool IsThreefoldRepetition(const GameState& game)
+{
+	if (game.positionHistory.empty())
+	{
+		return false;
+	}
+
+	const std::string& currentPosition = game.positionHistory.back();
+
+	int count = 0;
+
+	for (const std::string& position : game.positionHistory)
+	{
+		if (position == currentPosition)
+		{
+			count++;
+		}
+	}
+
+	return count >= 3;
+}
+
+bool HasLegalEnPassantCapture(int board[8][8], const GameState& game)
+{
+	if (!game.enPassantAvailable) 
+	{
+		return false;
+	}
+
+	int epRow = game.enPassantRow;
+	int epColumn = game.enPassantColumn;
+
+	if (epRow < 0 || epRow >= 8 || epColumn < 0 || epColumn >= 8)
+	{
+		return false;
+	}
+
+	int movingPawn = game.whiteTurn ? WHITE_PAWN : BLACK_PAWN;
+	int enemyPawn = game.whiteTurn ? BLACK_PAWN : WHITE_PAWN;
+
+	int direction = game.whiteTurn ? -1 : 1;
+
+	if (board[epRow][epColumn] != enemyPawn)
+	{
+		return false;
+	}
+
+	int destinationRow = epRow + direction;
+
+	if (destinationRow < 0 || destinationRow >= 8)
+	{
+		return false;
+	}
+
+	for (int offset = -1; offset <= 1; offset += 2)
+	{
+		int fromColumn = epColumn + offset;
+
+		if (fromColumn < 0 || fromColumn >= 8)
+		{
+			continue;
+		}
+
+		if (board[epRow][fromColumn] != movingPawn)
+		{
+			continue;
+		}
+
+		board[epRow][fromColumn] = EMPTY;
+		board[epRow][epColumn] = EMPTY;
+		board[destinationRow][epColumn] = movingPawn;
+
+		int kingPiece =
+			game.whiteTurn ? WHITE_KING : BLACK_KING;
+
+		bool kingInCheck =
+			IsKingInCheck(board, kingPiece);
+
+		// Restore board.
+		board[epRow][fromColumn] = movingPawn;
+		board[epRow][epColumn] = enemyPawn;
+		board[destinationRow][epColumn] = EMPTY;
+
+		if (!kingInCheck)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+std::string GeneratePositionKey(int board[8][8], const GameState& game) 
+{
+	std::string key;
+
+	// 1. Board position
+	for (int row = 0; row < 8; row++)
+	{
+		for (int column = 0; column < 8; column++)
+		{
+			key += std::to_string(board[row][column]);
+			key += ",";
+		}
+	}
+
+	// 2. Side to move
+	key += game.whiteTurn ? "W" : "B";
+
+	// 3. Castling state
+	key += game.whiteKingMoved ? "1" : "0";
+	key += game.blackKingMoved ? "1" : "0";
+
+	key += game.whiteKingSideRookMoved ? "1" : "0";
+	key += game.whiteQueenSideRookMoved ? "1" : "0";
+
+	key += game.blackKingSideRookMoved ? "1" : "0";
+	key += game.blackQueenSideRookMoved ? "1" : "0";
+
+	// 4. En passant state
+	bool hasEnPassantCapture = HasLegalEnPassantCapture(board, game);
+
+	key += hasEnPassantCapture ? "1" : "0";
+
+	if (hasEnPassantCapture)
+	{
+		key += std::to_string(game.enPassantRow);
+		key += ",";
+		key += std::to_string(game.enPassantColumn);
+	}
+
+	return key;
+}
+
+void RecordPosition(int board[8][8], GameState& game)
+{
+	std::string key = GeneratePositionKey(board, game);
+
+	game.positionHistory.push_back(key);
 }

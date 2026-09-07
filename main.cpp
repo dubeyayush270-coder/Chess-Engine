@@ -36,6 +36,51 @@ int main(int argc, char* argv[])
 {
 	InitializeBoard(board);
 	
+	RecordPosition(board, game);
+
+	
+
+	// Cycle 1
+	MakeMove(7, 6, 5, 5, board, game); // Ng1-f3
+	FinishMove(board, game);
+
+	MakeMove(0, 6, 2, 5, board, game); // Ng8-f6
+	FinishMove(board, game);
+
+	MakeMove(5, 5, 7, 6, board, game); // Nf3-g1
+	FinishMove(board, game);
+
+	MakeMove(2, 5, 0, 6, board, game); // Nf6-g8
+	FinishMove(board, game);
+
+	// Cycle 2
+	MakeMove(7, 6, 5, 5, board, game);
+	FinishMove(board, game);
+
+	MakeMove(0, 6, 2, 5, board, game);
+	FinishMove(board, game);
+
+	MakeMove(5, 5, 7, 6, board, game);
+	FinishMove(board, game);
+
+	MakeMove(2, 5, 0, 6, board, game);
+	FinishMove(board, game);
+
+	std::cout << "Game over = " << game.gameOver << "\n";
+	std::cout << "History size = " << game.positionHistory.size() << "\n";
+
+	UndoMove(board, game);
+
+	std::cout << "After undo gameOver = "
+		<< game.gameOver << "\n";
+
+	std::cout << "Threefold after undo = "
+		<< IsThreefoldRepetition(game) << "\n";
+
+	RedoMove(board, game);
+
+	std::cout << "After redo gameOver = "
+		<< game.gameOver << "\n";
 
 	// This will initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
