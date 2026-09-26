@@ -2,49 +2,58 @@
 
 struct Move
 {
-	int fromRow;
-	int fromColumn;
+	int fromRow = -1;
+	int fromColumn = -1;
 
-	int toRow;
-	int toColumn;
+	int toRow = -1;
+	int toColumn = -1;
 
-	int movedPiece;
-	int capturedPiece;
+	int movedPiece = 0;
+	int capturedPiece = 0;
 
 
 	//States before the move
-	bool whiteTurn;
-	bool gameOver;
+	bool whiteTurn = true;
+	bool gameOver = false;
 
-	bool whiteKingMoved;
-	bool blackKingMoved;
+	int halfMoveClock = 0;
 
-	bool whiteKingSideRookMoved;
-	bool whiteQueenSideRookMoved;
+	bool whiteKingMoved = false;
+	bool blackKingMoved = false;
 
-	bool blackKingSideRookMoved;
-	bool blackQueenSideRookMoved;
+	bool whiteKingSideRookMoved = false;
+	bool whiteQueenSideRookMoved = false;
 
-	bool enPassantAvailable;
-	int enPassantRow;
-	int enPassantColumn;
+	bool blackKingSideRookMoved = false;
+	bool blackQueenSideRookMoved = false;
+
+	bool enPassantAvailable = false;
+	int enPassantRow = -1;
+	int enPassantColumn = -1;
 
 	// Castling information
-	bool wasCastling;
-	int rookFromRow;
-	int rookFromColumn;
-	int rookToRow;
-	int rookToColumn;
+	bool wasCastling = false;
+	int rookFromRow = -1;
+	int rookFromColumn = -1;
+	int rookToRow = -1;
+	int rookToColumn = -1;
 
 	// En Passant capture information
-	int enPassantCapturedRow;
-	int enPassantCapturedColumn;
+	int enPassantCapturedRow = -1;
+	int enPassantCapturedColumn = -1;
 
-	bool promotionPending;
-	int promotionRow;
-	int promotionColumn;
+	// Promotion
+	bool promotionPending = false;
+	int promotionRow = -1;
+	int promotionColumn = -1;
+	int promotedPiece = 0;
 
-	int promotedPiece;
 
-	int halfMoveClock;
+	// Notation
+	bool givesCheck = false;
+	bool givesCheckmate = false;
+
+	// Disambiguation information
+	char disambiguationFile = '\0';
+	char disambiguationRank = '\0';
 };

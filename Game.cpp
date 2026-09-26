@@ -142,6 +142,7 @@ void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8]
 
 	move.promotedPiece = EMPTY;
 
+
 	
 	if (isEnPassant)
 	{
@@ -168,6 +169,10 @@ void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8]
 
 		move.rookToRow = fromRow;
 	}
+
+
+	// Determine SAN disambiguation while the original board position still exists.
+	SetMoveDisambiguation(board, move, game);
 
 	//Store the move
 	game.moveHistory.push_back(move);
@@ -300,7 +305,21 @@ void FinishMove(int board[8][8], GameState& game)
 
 	int sideToMoveKing = game.whiteTurn ? WHITE_KING : BLACK_KING;
 
-	if (IsCheckmate(board, sideToMoveKing, game))
+	bool givesCheck = IsKingInCheck(board, sideToMoveKing);
+	bool givesCheckmate = false;
+
+	if (givesCheck)
+	{
+		givesCheckmate = IsCheckmate(board, sideToMoveKing, game);
+	}
+
+	if (!game.moveHistory.empty())
+	{
+		game.moveHistory.back().givesCheck = givesCheck;
+		game.moveHistory.back().givesCheckmate = givesCheckmate;
+	}
+
+	if (givesCheckmate)
 	{
 		std::cout << "CHECKMATE!\n";
 
@@ -337,7 +356,7 @@ void FinishMove(int board[8][8], GameState& game)
 	}
 	else 
 	{
-		if (IsKingInCheck(board, sideToMoveKing))
+		if (givesCheck)
 		{
 			std::cout << "CHECK!\n";
 		}
@@ -774,4 +793,213 @@ void RecordPosition(int board[8][8], GameState& game)
 	std::string key = GeneratePositionKey(board, game);
 
 	game.positionHistory.push_back(key);
+}
+
+std::string SquareToNotation(int row, int column)
+{
+	char file = 'a' + column;
+	char rank = '8' - row;
+
+	std::string square;
+	square += file;
+	square += rank;
+
+	return square;
+}
+
+char PromotionPieceToNotation(int piece)
+{
+	switch (piece)
+	{
+	case WHITE_QUEEN:
+	case BLACK_QUEEN:
+		return 'Q';
+
+	case WHITE_ROOK:
+	case BLACK_ROOK:
+		return 'R';
+
+	case WHITE_BISHOP:
+	case BLACK_BISHOP:
+		return 'B';
+
+	case WHITE_KNIGHT:
+	case BLACK_KNIGHT:
+		return 'N';
+	}
+
+	return '\0';
+}
+
+std::string MoveToNotation(const Move& move)
+{
+	std::string notation;
+
+	bool isEnPassant = move.enPassantCapturedRow != -1;
+
+	bool isCapture = (move.capturedPiece != EMPTY || isEnPassant);
+
+	if (move.wasCastling) 
+	{
+		if (move.toColumn == 6)
+		{
+			notation = "O-O";
+		}
+		else if (move.toColumn == 2)
+		{
+			notation = "O-O-O";
+		}
+	}
+	else if (move.movedPiece == WHITE_PAWN || move.movedPiece == BLACK_PAWN)
+	{
+		if (isCapture)
+		{
+			notation += static_cast<char>('a' + move.fromColumn);
+
+			notation += "x";
+		}
+
+		notation += SquareToNotation(move.toRow, move.toColumn);
+
+		if (move.promotedPiece != EMPTY)
+		{
+			char promotionPiece = PromotionPieceToNotation(move.promotedPiece);
+
+			if (promotionPiece != '\0')
+			{
+				notation += "=";
+				notation += promotionPiece;
+			}
+		}
+	}
+	else
+	{
+		switch (move.movedPiece)
+		{
+		case WHITE_KNIGHT:
+		case BLACK_KNIGHT:
+			notation += "N";
+			break;
+
+		case WHITE_BISHOP:
+		case BLACK_BISHOP:
+			notation += "B";
+			break;
+
+		case WHITE_ROOK:
+		case BLACK_ROOK:
+			notation += "R";
+			break;
+
+		case WHITE_QUEEN:
+		case BLACK_QUEEN:
+			notation += "Q";
+			break;
+
+		case WHITE_KING:
+		case BLACK_KING:
+			notation += "K";
+			break;
+		}
+
+		if (move.disambiguationFile != '\0')
+		{
+			notation += move.disambiguationFile;
+		}
+
+		if (move.disambiguationRank != '\0')
+		{
+			notation += move.disambiguationRank;
+		}
+
+		if (isCapture)
+		{
+			notation += "x";
+		}
+
+		notation += SquareToNotation(move.toRow, move.toColumn);
+	}
+
+	if (move.givesCheckmate)
+	{
+		notation += "#";
+	}
+	else if (move.givesCheck)
+	{
+		notation += "+";
+	}
+
+	return notation;
+}
+
+void SetMoveDisambiguation(const int board[8][8], Move& move, GameState& game)
+{
+	if (move.movedPiece == WHITE_PAWN || move.movedPiece == BLACK_PAWN || move.movedPiece == WHITE_KING || move.movedPiece == BLACK_KING)
+	{
+		return;
+	}
+
+	bool anotherPieceFound = false;
+	bool sameFileFound = false;
+	bool sameRankFound = false;
+
+	for (int row = 0; row < 8; row++)
+	{
+		for (int column = 0; column < 8; column++)
+		{
+			if (row == move.fromRow && column == move.fromColumn)
+			{
+				continue;
+			}
+
+			if (board[row][column] != move.movedPiece)
+			{
+				continue;
+			}
+
+			int tempBoard[8][8];
+
+			for (int r = 0; r < 8; r++)
+			{
+				for (int c = 0; c < 8; c++)
+				{
+					tempBoard[r][c] = board[r][c];
+				}
+			}
+
+			if(IsLegalMove(row, column, move.toRow, move.toColumn, tempBoard, game))
+			{
+				anotherPieceFound = true;
+				if (column == move.fromColumn)
+				{
+					sameFileFound = true;
+				}
+
+				if (row == move.fromRow)
+				{
+					sameRankFound = true;
+				}
+			}
+		}
+	}
+
+	if (!anotherPieceFound)
+	{
+		return;
+	}
+
+	if (!sameFileFound)
+	{
+		move.disambiguationFile = static_cast<char>('a' + move.fromColumn);
+	}
+	else if (!sameRankFound)
+	{
+		move.disambiguationRank = static_cast<char>('8' - move.fromRow);
+	}
+	else
+	{
+		move.disambiguationFile = static_cast<char>('a' + move.fromColumn);
+
+		move.disambiguationRank = static_cast<char>('8' - move.fromRow);
+	}
 }

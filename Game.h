@@ -61,3 +61,11 @@ bool IsThreefoldRepetition(const GameState& game);
 std::string GeneratePositionKey(int board[8][8], const GameState& game);
 
 void RecordPosition(int board[8][8], GameState& game);
+
+std::string SquareToNotation(int row, int column);
+
+std::string MoveToNotation(const Move& move);
+
+char PromotionPieceToNotation(int piece);
+
+void SetMoveDisambiguation(const int board[8][8], Move& move, GameState& game);

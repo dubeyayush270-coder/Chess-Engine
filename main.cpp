@@ -30,7 +30,57 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 
 	return texture;
 }
+void TestDisambiguationUndoRedo()
+{
+	int board[8][8] = {};
+	GameState game;
 
+	board[7][4] = WHITE_KING;   // e1
+	board[0][4] = BLACK_KING;   // e8
+
+	board[7][1] = WHITE_KNIGHT; // b1
+	board[5][5] = WHITE_KNIGHT; // f3
+
+	game.whiteTurn = true;
+
+	std::cout << "\n--- DISAMBIGUATION UNDO/REDO TEST ---\n";
+
+	// b1 -> d2
+	MakeMove(
+		7, 1,
+		6, 3,
+		board,
+		game
+	);
+
+	FinishMove(board, game);
+
+	std::cout << "\nAfter move:\n";
+	std::cout << "Expected: Nbd2\n";
+	std::cout << "Result: "
+		<< MoveToNotation(game.moveHistory.back())
+		<< "\n";
+
+	// Undo
+	UndoMove(board, game);
+
+	std::cout << "\nAfter undo:\n";
+	std::cout << "b1 = " << board[7][1] << "\n";
+	std::cout << "d2 = " << board[6][3] << "\n";
+
+	// Redo
+	RedoMove(board, game);
+
+	std::cout << "\nAfter redo:\n";
+	std::cout << "Expected: Nbd2\n";
+	std::cout << "Result: "
+		<< MoveToNotation(game.moveHistory.back())
+		<< "\n";
+
+	std::cout << "Stored file: "
+		<< game.moveHistory.back().disambiguationFile
+		<< "\n";
+}
 
 int main(int argc, char* argv[])
 {
@@ -38,49 +88,7 @@ int main(int argc, char* argv[])
 	
 	RecordPosition(board, game);
 
-	
-
-	// Cycle 1
-	MakeMove(7, 6, 5, 5, board, game); // Ng1-f3
-	FinishMove(board, game);
-
-	MakeMove(0, 6, 2, 5, board, game); // Ng8-f6
-	FinishMove(board, game);
-
-	MakeMove(5, 5, 7, 6, board, game); // Nf3-g1
-	FinishMove(board, game);
-
-	MakeMove(2, 5, 0, 6, board, game); // Nf6-g8
-	FinishMove(board, game);
-
-	// Cycle 2
-	MakeMove(7, 6, 5, 5, board, game);
-	FinishMove(board, game);
-
-	MakeMove(0, 6, 2, 5, board, game);
-	FinishMove(board, game);
-
-	MakeMove(5, 5, 7, 6, board, game);
-	FinishMove(board, game);
-
-	MakeMove(2, 5, 0, 6, board, game);
-	FinishMove(board, game);
-
-	std::cout << "Game over = " << game.gameOver << "\n";
-	std::cout << "History size = " << game.positionHistory.size() << "\n";
-
-	UndoMove(board, game);
-
-	std::cout << "After undo gameOver = "
-		<< game.gameOver << "\n";
-
-	std::cout << "Threefold after undo = "
-		<< IsThreefoldRepetition(game) << "\n";
-
-	RedoMove(board, game);
-
-	std::cout << "After redo gameOver = "
-		<< game.gameOver << "\n";
+	TestDisambiguationUndoRedo();
 
 	// This will initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
