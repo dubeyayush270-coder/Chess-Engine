@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GameType.h"
+
 struct Move
 {
 	int fromRow = -1;
@@ -15,6 +17,8 @@ struct Move
 	//States before the move
 	bool whiteTurn = true;
 	bool gameOver = false;
+
+	GameEndReason endReason = GameEndReason::NONE;
 
 	int halfMoveClock = 0;
 

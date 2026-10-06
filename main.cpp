@@ -11,7 +11,7 @@
 #include "Game.h"
 #include "MoveValidation.h"
 
-constexpr int HISTORY_MAX_VISIBLE_LINES = 23;
+constexpr int HISTORY_MAX_VISIBLE_LINES = 21;
 
 SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 
@@ -95,7 +95,7 @@ void RenderMoveHistory(SDL_Renderer* renderer, TTF_Font* font, const GameState& 
 	}
 
 	const int x = 820;
-	const int startY = 65;
+	const int startY = 165;
 	const int lineSpacing = 30;
 
 	int maxScroll = GetMaxHistoryScroll(game);
@@ -121,36 +121,71 @@ void RenderMoveHistory(SDL_Renderer* renderer, TTF_Font* font, const GameState& 
 }
 
 
-void AddDummyMoveHistory(GameState& game)
+std::string GetGameStatusText(int board[8][8], const GameState& game)
 {
-	for (int i = 0; i < 60; i++)
+	if (game.gameOver)
 	{
-		Move move{};
-
-		if (i % 2 == 0)
+		switch (game.endReason)
 		{
-			move.movedPiece = WHITE_PAWN;
-			move.fromRow = 6;
-			move.fromColumn = 4;
-			move.toRow = 4;
-			move.toColumn = 4;
-		}
-		else
-		{
-			move.movedPiece = BLACK_PAWN;
-			move.fromRow = 1;
-			move.fromColumn = 4;
-			move.toRow = 3;
-			move.toColumn = 4;
-		}
+		case GameEndReason::CHECKMATE:				return "Status: Checkmate";
+		case GameEndReason::STALEMATE:				return "Status: Stalemate";
+		case GameEndReason::INSUFFICIENT_MATERIAL:	return "Status: Draw";
+		case GameEndReason::FIFTY_MOVE_RULE:		return "Status: Draw";
+		case GameEndReason::THREEFOLD_REPETITION:	return "Status: Draw";
 
-		game.moveHistory.push_back(move);
+		default:
+			return "Status: Game Over";
+		}
+	}
+
+	int currentKing = game.whiteTurn ? WHITE_KING : BLACK_KING;
+
+	if (IsKingInCheck(board, currentKing))
+	{
+		return "Status: Check";
+	}
+
+	return "status: Playing";
+}
+
+
+std::string GetGameDetailText(const GameState& game)
+{
+	if (!game.gameOver)
+	{
+		return "";
+	}
+
+	switch (game.endReason)
+	{
+	case GameEndReason::CHECKMATE:
+		// whiteTurn is the side that is checkmated,
+		// so the winner is the opposite side.
+		return game.whiteTurn
+			? "Winner: Black"
+			: "Winner: White";
+
+	case GameEndReason::STALEMATE:
+		return "Reason: Stalemate";
+
+	case GameEndReason::INSUFFICIENT_MATERIAL:
+		return "Reason: Insufficient Material";
+
+	case GameEndReason::FIFTY_MOVE_RULE:
+		return "Reason: Fifty-Move Rule";
+
+	case GameEndReason::THREEFOLD_REPETITION:
+		return "Reason: Threefold";
+
+	default:
+		return "";
 	}
 }
 
 
 int main(int argc, char* argv[])
 {
+	
 	
 	// This will initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -163,10 +198,6 @@ int main(int argc, char* argv[])
 			<< TTF_GetError() << "\n";
 		SDL_Quit();
 		return -1;
-	}
-	else
-	{
-		std::cout << "SDL_ttf initialized successfully.\n";
 	}
 
 
@@ -261,7 +292,7 @@ int main(int argc, char* argv[])
 	bool running = true;
 	SDL_Event event;
 
-	AddDummyMoveHistory(game);
+	
 	
 	while (running)
 	{
@@ -486,22 +517,37 @@ int main(int argc, char* argv[])
 
 		SDL_Color textColor = { 255, 255, 255, 255 };
 
-		RenderText(
-			renderer,
-			font,
-			"Move History",
-			820,
-			20,
-			textColor
-		);
+		RenderText(renderer, font, "Move History", 820, 20, textColor);
+
+		std::string turnText;
+
+		if (game.whiteTurn)
+		{
+			turnText = "Turn: White";
+		}
+		else
+		{
+			turnText = "Turn: Black";
+		}
+
+		RenderText(renderer, font, turnText, 820, 55, textColor);
+
+		std::string statusText = GetGameStatusText(board, game);
+
+		RenderText(renderer, font, statusText, 820, 90, textColor);
+
+		std::string detailText = GetGameDetailText(game);
+
+		if (!detailText.empty())
+		{
+			RenderText(renderer, font, detailText, 820, 125, textColor);
+		}
 
 		RenderMoveHistory(renderer, font, game, textColor, historyScrollOffset);
 
 
 		// Display Everything
-
 		SDL_RenderPresent(renderer);
-
 		// Display Everything
 	}
 

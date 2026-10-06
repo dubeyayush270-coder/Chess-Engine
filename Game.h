@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <string>
+
+#include "GameType.h"
 #include "Move.h"
 
 struct GameState
@@ -9,6 +11,8 @@ struct GameState
 
 	bool whiteTurn = true;
 	bool gameOver = false;
+
+	GameEndReason endReason = GameEndReason::NONE;
 
 	bool whiteKingMoved = false;
 	bool blackKingMoved = false;
@@ -28,6 +32,7 @@ struct GameState
 	int promotionColumn = -1;
 
 	int halfMoveClock = 0;
+
 
 	std::vector<Move> moveHistory;
 

@@ -120,7 +120,7 @@ void MakeMove(int fromRow, int fromColumn, int toRow, int toColumn, int board[8]
 	//Save game state before the move
 	move.whiteTurn = game.whiteTurn;
 	move.gameOver = game.gameOver;
-
+	move.endReason = game.endReason;
 	move.halfMoveClock = game.halfMoveClock;
 
 	move.whiteKingMoved = game.whiteKingMoved;
@@ -301,6 +301,8 @@ void FinishMove(int board[8][8], GameState& game)
 {
 	game.whiteTurn = !game.whiteTurn;
 
+	game.endReason = GameEndReason::NONE;
+
 	RecordPosition(board, game);
 
 	int sideToMoveKing = game.whiteTurn ? WHITE_KING : BLACK_KING;
@@ -333,26 +335,31 @@ void FinishMove(int board[8][8], GameState& game)
 		}
 
 		game.gameOver = true;
+		game.endReason = GameEndReason::CHECKMATE;
 	}
 	else if (IsStalemate(board, sideToMoveKing, game))
 	{
-		std::cout << "It's A Draw.\n";
+		std::cout << "STALEMATE: It's A Draw.\n";
 		game.gameOver = true;
+		game.endReason = GameEndReason::STALEMATE;
 	}
 	else if (IsInsufficientMaterial(board))
 	{
 		std::cout << "Draw by insufficient material.\n";
 		game.gameOver = true;
+		game.endReason = GameEndReason::INSUFFICIENT_MATERIAL;
 	}
 	else if (IsFiftyMoveRule(game))
 	{
 		std::cout << "Draw by fifty-move rule.\n";
 		game.gameOver = true;
+		game.endReason = GameEndReason::FIFTY_MOVE_RULE;
 	}
 	else if (IsThreefoldRepetition(game))
 	{
 		std::cout << "Draw by threefold repetition.\n";
 		game.gameOver = true;
+		game.endReason = GameEndReason::THREEFOLD_REPETITION;
 	}
 	else 
 	{
@@ -520,7 +527,7 @@ void UndoMove(int board[8][8], GameState& game)
 
 	game.whiteTurn = move.whiteTurn;
 	game.gameOver = move.gameOver;
-
+	game.endReason = move.endReason;
 	game.halfMoveClock = move.halfMoveClock;
 
 	game.whiteKingMoved = move.whiteKingMoved;
