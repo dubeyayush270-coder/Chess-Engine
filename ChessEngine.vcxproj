@@ -89,19 +89,21 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Libraries\SDL2_image\SDL2_image-2.8.6\include;D:\Libraries\SDL2\SDL2-2.32.10\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Libraries\SDL2_image\SDL2_image-2.8.6\include;D:\Libraries\SDL2_ttf-2.24.0\include;D:\Libraries\SDL2\SDL2-2.32.10\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Libraries\SDL2_ttf-2.24.0\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
     <PostBuildEvent>
       <Command>copy /Y "D:\Libraries\SDL2\SDL2-2.32.10\lib\x64\SDL2.dll" "$(OutDir)"
-copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(OutDir)"</Command>
+copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(OutDir)"
+copy /Y "D:\Libraries\SDL2_ttf-2.24.0\lib\x64\SDL2_ttf.dll" "$(OutDir)SDL2_ttf.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -113,19 +115,21 @@ copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(Out
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Libraries\SDL2_image\SDL2_image-2.8.6\include;D:\Libraries\SDL2\SDL2-2.32.10\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Libraries\SDL2_image\SDL2_image-2.8.6\include;D:\Libraries\SDL2_ttf-2.24.0\include;D:\Libraries\SDL2\SDL2-2.32.10\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Libraries\SDL2_ttf-2.24.0\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
     <PostBuildEvent>
       <Command>copy /Y "D:\Libraries\SDL2\SDL2-2.32.10\lib\x64\SDL2.dll" "$(OutDir)"
-copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(OutDir)"</Command>
+copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(OutDir)"
+copy /Y "D:\Libraries\SDL2_ttf-2.24.0\lib\x64\SDL2_ttf.dll" "$(OutDir)SDL2_ttf.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -135,19 +139,21 @@ copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(Out
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Libraries\SDL2_image\SDL2_image-2.8.6\include;D:\Libraries\SDL2\SDL2-2.32.10\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Libraries\SDL2_image\SDL2_image-2.8.6\include;D:\Libraries\SDL2_ttf-2.24.0\include;D:\Libraries\SDL2\SDL2-2.32.10\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Libraries\SDL2_ttf-2.24.0\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
     <PostBuildEvent>
       <Command>copy /Y "D:\Libraries\SDL2\SDL2-2.32.10\lib\x64\SDL2.dll" "$(OutDir)"
-copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(OutDir)"</Command>
+copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(OutDir)"
+copy /Y "D:\Libraries\SDL2_ttf-2.24.0\lib\x64\SDL2_ttf.dll" "$(OutDir)SDL2_ttf.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -159,19 +165,21 @@ copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(Out
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Libraries\SDL2_image\SDL2_image-2.8.6\include;D:\Libraries\SDL2\SDL2-2.32.10\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Libraries\SDL2_image\SDL2_image-2.8.6\include;D:\Libraries\SDL2_ttf-2.24.0\include;D:\Libraries\SDL2\SDL2-2.32.10\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Libraries\SDL2_ttf-2.24.0\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
     <PostBuildEvent>
       <Command>copy /Y "D:\Libraries\SDL2\SDL2-2.32.10\lib\x64\SDL2.dll" "$(OutDir)"
-copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(OutDir)"</Command>
+copy /Y "D:\Libraries\SDL2_image\SDL2_image-2.8.6\lib\x64\SDL2_image.dll" "$(OutDir)"
+copy /Y "D:\Libraries\SDL2_ttf-2.24.0\lib\x64\SDL2_ttf.dll" "$(OutDir)SDL2_ttf.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

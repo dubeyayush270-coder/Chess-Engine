@@ -1003,3 +1003,39 @@ void SetMoveDisambiguation(const int board[8][8], Move& move, GameState& game)
 		move.disambiguationRank = static_cast<char>('8' - move.fromRow);
 	}
 }
+
+std::string GenerateMoveHistoryText(const GameState& game) 
+{
+	std::string historyText;
+
+	for (size_t i = 0; i < game.moveHistory.size(); i++)
+	{
+		if (i % 2 == 0)
+		{
+			int moveNumber = static_cast<int>(i / 2) + 1;
+
+			historyText += std::to_string(moveNumber);
+			historyText += ". ";
+		}
+
+		historyText += MoveToNotation(game.moveHistory[i]);
+
+		if (i % 2 == 1)
+		{
+			historyText += "\n";
+		}
+		else
+		{
+			if (i + 1 < game.moveHistory.size())
+			{
+				historyText += " ";
+			}
+		}
+	}
+
+	if (!game.moveHistory.empty() && game.moveHistory.size() % 2 == 1)
+	{
+		historyText += "\n";
+	}
+	return historyText;
+}

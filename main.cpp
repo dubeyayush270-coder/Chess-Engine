@@ -1,16 +1,15 @@
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 #include <iostream>
 #include <cmath>
+#include <sstream>
 
 #include "ChessPieces.h"
 #include "Board.h"
 #include "Game.h"
 #include "MoveValidation.h"
 
-int board[8][8];
-
-GameState game;
 
 SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 
@@ -30,71 +29,77 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 
 	return texture;
 }
-void TestDisambiguationUndoRedo()
+
+void RenderText(SDL_Renderer* renderer, TTF_Font* font, const std::string& text, int x, int y, SDL_Color color)
 {
-	int board[8][8] = {};
-	GameState game;
+	SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), color);
 
-	board[7][4] = WHITE_KING;   // e1
-	board[0][4] = BLACK_KING;   // e8
+	if (surface == nullptr)
+	{
+		std::cout << "Text surface creation failed: " << TTF_GetError() << "\n";
+		return;
+	}
 
-	board[7][1] = WHITE_KNIGHT; // b1
-	board[5][5] = WHITE_KNIGHT; // f3
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
-	game.whiteTurn = true;
+	if (texture == nullptr)
+	{
+		std::cout << "Text texture creation failed: " << SDL_GetError() << "\n";
 
-	std::cout << "\n--- DISAMBIGUATION UNDO/REDO TEST ---\n";
+		SDL_FreeSurface(surface);
+		return;
+	}
 
-	// b1 -> d2
-	MakeMove(
-		7, 1,
-		6, 3,
-		board,
-		game
-	);
+	SDL_Rect destination = { x, y, surface->w, surface->h };
 
-	FinishMove(board, game);
+	SDL_RenderCopy(renderer, texture, nullptr, &destination);
 
-	std::cout << "\nAfter move:\n";
-	std::cout << "Expected: Nbd2\n";
-	std::cout << "Result: "
-		<< MoveToNotation(game.moveHistory.back())
-		<< "\n";
+	SDL_DestroyTexture(texture);
+	SDL_FreeSurface(surface);
+}
 
-	// Undo
-	UndoMove(board, game);
+void RenderMoveHistory(SDL_Renderer* renderer, TTF_Font* font, const GameState& game, SDL_Color color)
+{
+	std::string history = GenerateMoveHistoryText(game);
 
-	std::cout << "\nAfter undo:\n";
-	std::cout << "b1 = " << board[7][1] << "\n";
-	std::cout << "d2 = " << board[6][3] << "\n";
+	std::istringstream stream(history);
 
-	// Redo
-	RedoMove(board, game);
+	std::string line;
 
-	std::cout << "\nAfter redo:\n";
-	std::cout << "Expected: Nbd2\n";
-	std::cout << "Result: "
-		<< MoveToNotation(game.moveHistory.back())
-		<< "\n";
+	int x = 820;
+	int y = 65;
+	int lineSpacing = 30;
 
-	std::cout << "Stored file: "
-		<< game.moveHistory.back().disambiguationFile
-		<< "\n";
+	while (std::getline(stream, line))
+	{
+		if (!line.empty())
+		{
+			RenderText(renderer, font, line, x, y, color);
+			y += lineSpacing;
+		}
+	}
 }
 
 int main(int argc, char* argv[])
 {
-	InitializeBoard(board);
-	
-	RecordPosition(board, game);
-
-	TestDisambiguationUndoRedo();
 
 	// This will initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 		std::cout << "SDL Initialization Failed : " << SDL_GetError() << std::endl;
 		return -1;
 	}
+	if (TTF_Init() == -1)
+	{
+		std::cout << "SDL_ttf initialization failed: "
+			<< TTF_GetError() << "\n";
+		SDL_Quit();
+		return -1;
+	}
+	else
+	{
+		std::cout << "SDL_ttf initialized successfully.\n";
+	}
+
 
 
 	// Create Window
@@ -103,7 +108,7 @@ int main(int argc, char* argv[])
 		"Ayush's Chess Engine",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		800,
+		1000,
 		800,
 		SDL_WINDOW_SHOWN
 	);
@@ -112,6 +117,7 @@ int main(int argc, char* argv[])
 	if (window == nullptr)
 	{
 		std::cout << "Window Creation Failed : " << SDL_GetError() << std::endl;
+		TTF_Quit();
 		SDL_Quit();
 		return 1;
 	}
@@ -123,8 +129,9 @@ int main(int argc, char* argv[])
 	{
 		std::cout << "Renderer could not be created! SDL_error: " << SDL_GetError() << std::endl;
 		SDL_DestroyWindow(window);
+		TTF_Quit();
 		SDL_Quit();
-		return 1;
+		return -1;
 	}
 
 	// Code For Square
@@ -155,6 +162,26 @@ int main(int argc, char* argv[])
 
 	// Creating texture Array
 	
+
+	// Font Loading
+	TTF_Font* font = TTF_OpenFont("C:\\Windows\\Fonts\\arial.ttf", 24);
+	if (!font)
+	{
+		std::cout << "Failed to load font: " << TTF_GetError() << "\n";
+		SDL_DestroyRenderer(renderer);
+		SDL_DestroyWindow(window);
+		TTF_Quit();
+		SDL_Quit();
+
+		return -1;
+	}
+
+
+	int board[8][8];
+	InitializeBoard(board);
+
+	GameState game;
+	RecordPosition(board, game);
 	
 	bool pieceSelected = false;
 	int selectedRow = -1;
@@ -234,13 +261,20 @@ int main(int argc, char* argv[])
 					if (game.gameOver)
 					{
 						std::cout << "Game is over!\n";
-						return 0;
+						continue;
 					}
+
+					if (event.button.x >= 800)
+					{
+						continue;
+					}
+
 					std::cout << "X = " << event.button.x << std::endl;
 					std::cout << "Y = " << event.button.y << std::endl;
 
 					int column = event.button.x / 100;
 					int row = event.button.y / 100;
+
 					std::cout << "Row = " << row << std::endl;
 					std::cout << "Column = " << column << std::endl;
 
@@ -358,17 +392,40 @@ int main(int argc, char* argv[])
 		
 		// For creating pieces
 
+		SDL_Color textColor = { 255, 255, 255, 255 };
+
+		RenderText(
+			renderer,
+			font,
+			"Move History",
+			820,
+			20,
+			textColor
+		);
+
+		RenderMoveHistory(renderer, font, game, textColor);
+
+
 		// Display Everything
+
 		SDL_RenderPresent(renderer);
+
 		// Display Everything
 	}
 
 	for (int i = 1; i < 13; i++) {
 		SDL_DestroyTexture(pieceTextures[i]);
 	}
+
+	TTF_CloseFont(font);
+
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+
+	TTF_Quit();
 	SDL_Quit();
+
 	std::cout << "Closing Game...\n";
+
 	return 0;
 }
