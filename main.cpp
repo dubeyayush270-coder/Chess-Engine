@@ -4,12 +4,14 @@
 #include <iostream>
 #include <cmath>
 #include <sstream>
+#include <vector>
 
 #include "ChessPieces.h"
 #include "Board.h"
 #include "Game.h"
 #include "MoveValidation.h"
 
+constexpr int HISTORY_MAX_VISIBLE_LINES = 23;
 
 SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* filename) {
 
@@ -58,31 +60,98 @@ void RenderText(SDL_Renderer* renderer, TTF_Font* font, const std::string& text,
 	SDL_FreeSurface(surface);
 }
 
-void RenderMoveHistory(SDL_Renderer* renderer, TTF_Font* font, const GameState& game, SDL_Color color)
+
+int GetMaxHistoryScroll(const GameState& game)
+{
+	int totalLines = (static_cast<int>(game.moveHistory.size()) + 1) / 2;
+
+	int maxScroll = totalLines - HISTORY_MAX_VISIBLE_LINES;
+
+	if (maxScroll < 0)
+	{
+		maxScroll = 0;
+	}
+
+	return maxScroll;
+}
+
+void RenderMoveHistory(SDL_Renderer* renderer, TTF_Font* font, const GameState& game, SDL_Color color, int& scrollOffset)
 {
 	std::string history = GenerateMoveHistoryText(game);
 
 	std::istringstream stream(history);
+	std::vector<std::string> lines;
 
 	std::string line;
 
-	int x = 820;
-	int y = 65;
-	int lineSpacing = 30;
+	
 
 	while (std::getline(stream, line))
 	{
 		if (!line.empty())
 		{
-			RenderText(renderer, font, line, x, y, color);
-			y += lineSpacing;
+			lines.push_back(line);
 		}
+	}
+
+	const int x = 820;
+	const int startY = 65;
+	const int lineSpacing = 30;
+
+	int maxScroll = GetMaxHistoryScroll(game);
+
+	if (scrollOffset < 0)
+	{
+		scrollOffset = 0;
+	}
+
+	if (scrollOffset > maxScroll)
+	{
+		scrollOffset = maxScroll;
+	}
+
+	int y = startY;
+
+	for (int i = scrollOffset; i < static_cast<int>(lines.size()) && i < scrollOffset + HISTORY_MAX_VISIBLE_LINES; i++)
+	{
+		RenderText(renderer, font, lines[i], x, y, color);
+
+		y += lineSpacing;
 	}
 }
 
+
+void AddDummyMoveHistory(GameState& game)
+{
+	for (int i = 0; i < 60; i++)
+	{
+		Move move{};
+
+		if (i % 2 == 0)
+		{
+			move.movedPiece = WHITE_PAWN;
+			move.fromRow = 6;
+			move.fromColumn = 4;
+			move.toRow = 4;
+			move.toColumn = 4;
+		}
+		else
+		{
+			move.movedPiece = BLACK_PAWN;
+			move.fromRow = 1;
+			move.fromColumn = 4;
+			move.toRow = 3;
+			move.toColumn = 4;
+		}
+
+		game.moveHistory.push_back(move);
+	}
+}
+
+
 int main(int argc, char* argv[])
 {
-
+	
 	// This will initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 		std::cout << "SDL Initialization Failed : " << SDL_GetError() << std::endl;
@@ -187,8 +256,13 @@ int main(int argc, char* argv[])
 	int selectedRow = -1;
 	int selectedColumn = -1;
 
+	int historyScrollOffset = 0;
+
 	bool running = true;
 	SDL_Event event;
+
+	AddDummyMoveHistory(game);
+	
 	while (running)
 	{
 		while (SDL_PollEvent(&event))
@@ -196,6 +270,18 @@ int main(int argc, char* argv[])
 			if (event.type == SDL_QUIT)
 			{
 				running = false;
+			}
+
+			if (event.type == SDL_MOUSEWHEEL)
+			{
+				if (event.wheel.y > 0)
+				{
+					historyScrollOffset--;
+				}
+				else if (event.wheel.y < 0)
+				{
+					historyScrollOffset++;
+				}
 			}
 
 			// PROMOTION INPUT
@@ -229,6 +315,8 @@ int main(int argc, char* argv[])
 						std::cout << "Pawn promoted!\n";
 
 						FinishMove(board, game);
+
+						historyScrollOffset = GetMaxHistoryScroll(game);
 					}
 				}
 			}
@@ -248,6 +336,8 @@ int main(int argc, char* argv[])
 					else if (event.key.keysym.sym == SDLK_r)
 					{
 						RedoMove(board, game);
+
+						historyScrollOffset = GetMaxHistoryScroll(game);
 
 						//Reset Selection
 						pieceSelected = false;
@@ -326,6 +416,8 @@ int main(int argc, char* argv[])
 							else
 							{
 								FinishMove(board, game);
+
+								historyScrollOffset = GetMaxHistoryScroll(game);
 							}
 
 							pieceSelected = false;
@@ -403,7 +495,7 @@ int main(int argc, char* argv[])
 			textColor
 		);
 
-		RenderMoveHistory(renderer, font, game, textColor);
+		RenderMoveHistory(renderer, font, game, textColor, historyScrollOffset);
 
 
 		// Display Everything
